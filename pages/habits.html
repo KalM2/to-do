@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habits - simple day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Tangerine:wght@400;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <script>
+    (function() {
+      var t = null;
+      try { t = localStorage.getItem("simpleDay_theme"); } catch(e) {}
+      document.documentElement.dataset.theme = t || "warm-cream";
+    })();
+  </script>
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <a href="../index.html" class="brand-link">
+          <span class="brand-symbol">✦</span>
+          <span class="brand-title">simple day</span>
+        </a>
+      </div>
+      <nav class="header-nav">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="./planner.html">Planner</a></li>
+          <li><a href="./calender.html">Calender</a></li>
+          <li><a href="./projects.html">Projects</a></li>
+          <li><a href="./habits.html" class="active">Habits</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <button type="button" class="header-btn theme-toggle" aria-label="Choose color theme">
+          <svg class="palette-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1 .9-1.8 2-1.8H17a4 4 0 0 0 4-4c0-4.4-4-7.7-9-7.7Z"/>
+            <circle cx="7.5" cy="11" r="1.3" fill="var(--bg)"/>
+            <circle cx="10.5" cy="7" r="1.3" fill="var(--bg)"/>
+            <circle cx="15" cy="7.5" r="1.3" fill="var(--bg)"/>
+          </svg>
+          <span class="theme-toggle-label">Warm Cream</span>
+        </button>
+        <button type="button" class="header-btn profile-toggle" aria-label="Account profile">
+          <span class="profile-avatar-badge" id="headerProfileAvatar">K</span>
+          <span class="profile-toggle-name" id="headerProfileName">Kaleb</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div id="greetings">
+    <h1>Habit Tracker</h1>
+    <div class="calendar-month-nav">
+      <button type="button" id="prevWeekBtn" class="nav-arrow-btn" title="Previous Week">‹</button>
+      <span id="currentWeekRange" class="month-nav-title"></span>
+      <button type="button" id="nextWeekBtn" class="nav-arrow-btn" title="Next Week">›</button>
+      <button type="button" id="currentWeekBtn" class="pill">This Week</button>
+    </div>
+  </div>
+
+  <main class="habits-container">
+    <!-- Top Summary Metrics -->
+    <div class="habit-metrics-grid">
+      <div class="planner-card metric-card">
+        <span class="metric-label">Weekly Consistency</span>
+        <h3 id="metricConsistency" class="metric-value">0%</h3>
+        <div class="stats-bar-track">
+          <div id="metricProgressBar" class="stats-bar-fill"></div>
+        </div>
+      </div>
+      <div class="planner-card metric-card">
+        <span class="metric-label">Active Habits</span>
+        <h3 id="metricActiveCount" class="metric-value">0</h3>
+        <span class="metric-subtext">tracked routines</span>
+      </div>
+      <div class="planner-card metric-card">
+        <span class="metric-label">Longest Active Streak</span>
+        <h3 id="metricLongestStreak" class="metric-value">🔥 0 days</h3>
+        <span class="metric-subtext">personal best consistency</span>
+      </div>
+    </div>
+
+    <!-- Habits Tracker Table Card -->
+    <div class="planner-card habits-table-card">
+      <div class="habits-header-row">
+        <h2>Weekly Check-ins</h2>
+        <button type="button" id="openAddHabitBtn" class="pill pill-action">+ New Habit</button>
+      </div>
+
+      <div class="habits-table-responsive">
+        <table class="habits-table">
+          <thead>
+            <tr id="habitsDaysHeaderRow">
+              <th class="th-habit">Habit</th>
+              <th class="th-cat">Category</th>
+              <th class="th-streak">Streak</th>
+              <th class="th-day">Mon</th>
+              <th class="th-day">Tue</th>
+              <th class="th-day">Wed</th>
+              <th class="th-day">Thu</th>
+              <th class="th-day">Fri</th>
+              <th class="th-day">Sat</th>
+              <th class="th-day">Sun</th>
+              <th class="th-act"></th>
+            </tr>
+          </thead>
+          <tbody id="habitsTableBody">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Habit Modal -->
+  <dialog id="newHabitModal" class="app-modal">
+    <form method="dialog" id="newHabitForm">
+      <h3>Create New Habit</h3>
+      <div class="form-group">
+        <label for="habitNameInput">Habit Name</label>
+        <input type="text" id="habitNameInput" placeholder="e.g. Morning 20m Meditation" required />
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <div class="pill-container" id="habitCategoryPills">
+          <button type="button" class="pill selected" data-cat="Mind">Mind</button>
+          <button type="button" class="pill" data-cat="Health">Health</button>
+          <button type="button" class="pill" data-cat="Fitness">Fitness</button>
+          <button type="button" class="pill" data-cat="Productivity">Productivity</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="habitTargetSelect">Target Goal</label>
+        <select id="habitTargetSelect" class="app-select">
+          <option value="Daily">Daily (7 days / week)</option>
+          <option value="5x / week">5 days / week</option>
+          <option value="3x / week">3 days / week</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="closeHabitModalBtn" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary">Add Habit</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="../js/theme-profile.js"></script>
+  <script src="../js/habits.js"></script>
+</body>
+
+</html>
