@@ -99,8 +99,8 @@
       </div>
 
       <div id="weekView" class="calendar-grid-card timed-cal-card">
-        <div class="gcal-week-header" id="weekHeader"></div>
         <div class="gcal-scroll" id="weekScroll">
+          <div class="gcal-week-header" id="weekHeader"></div>
           <div class="gcal-timed-grid" id="weekGrid"></div>
         </div>
       </div>
@@ -110,24 +110,17 @@
           <div class="gcal-timed-grid gcal-day-grid" id="dayGrid"></div>
         </div>
       </div>
+
+      <section class="planner-card google-calendars-widget">
+        <h2 class="agenda-date-title">My Calendars</h2>
+        <p id="googleCalendarsMessage" class="calendar-list-message"></p>
+        <div id="googleCalendarsList" class="google-calendar-list" aria-label="Google calendars"></div>
+      </section>
     </div>
 
     <aside class="calendar-sidebar">
-      <div class="planner-card google-calendars-widget">
-        <h3 class="agenda-date-title">My calendars</h3>
-        <p id="googleCalendarsMessage" class="calendar-list-message"></p>
-        <div id="googleCalendarsList" class="google-calendar-list" aria-label="Google calendars"></div>
-      </div>
       <div class="planner-card day-agenda-widget">
-        <h3 id="selectedDateTitle" class="agenda-date-title">Events</h3>
-        <form id="addEventForm" class="add-event-form">
-          <input type="text" id="eventTitleInput" placeholder="Event title..." required />
-          <div class="event-time-row">
-            <label class="inline-time-label">Start <input type="time" id="eventTimeInput" value="09:00" /></label>
-            <label class="inline-time-label">End <input type="time" id="eventEndTimeInput" value="10:00" /></label>
-          </div>
-          <button type="submit" id="addEventBtn" class="pill pill-action">+ Add Event</button>
-        </form>
+        <h3 id="selectedDateTitle" class="agenda-date-title">Events for today</h3>
         <div class="day-events-list" id="dayEventsList"></div>
       </div>
 
@@ -137,6 +130,29 @@
       </div>
     </aside>
   </main>
+
+  <button type="button" id="openAddEventBtn" class="floating-add-event" aria-label="Add new event"
+    title="Add new event">
+    <span aria-hidden="true">+</span>
+  </button>
+
+  <dialog id="addEventModal" class="app-modal add-event-modal">
+    <form method="dialog" id="addEventForm">
+      <h3>Add new event</h3>
+      <div class="form-group">
+        <label for="eventTitleInput">Event title</label>
+        <input type="text" id="eventTitleInput" placeholder="Event title..." required />
+      </div>
+      <div class="form-group event-time-row">
+        <label class="inline-time-label">Start <input type="time" id="eventTimeInput" value="09:00" /></label>
+        <label class="inline-time-label">End <input type="time" id="eventEndTimeInput" value="10:00" /></label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="closeAddEventBtn" class="btn-secondary">Cancel</button>
+        <button type="submit" id="addEventBtn" class="btn-primary">Add event</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="https://accounts.google.com/gsi/client"></script>
   <script src="../js/db.js"></script>

@@ -87,6 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const syncStatusEl = document.getElementById('calendarSyncStatus');
   const icsImportInput = document.getElementById('icsImportInput');
   const googleSyncBtn = document.getElementById('googleSyncBtn');
+  const openAddEventBtn = document.getElementById('openAddEventBtn');
+  const addEventModal = document.getElementById('addEventModal');
+  const closeAddEventBtn = document.getElementById('closeAddEventBtn');
 
   const loadEvents = () => {
     const raw = localStorage.getItem('simpleDay_calendar_events');
@@ -157,15 +160,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     googleCalendarsMessage.textContent = '';
     googleCalendars.forEach((calendar) => {
-      const label = document.createElement('label');
-      label.className = 'google-calendar-toggle';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = calendarVisibility[calendar.id] !== false;
-      checkbox.setAttribute('aria-label', `Show ${calendar.summary}`);
-      checkbox.addEventListener('change', () => {
-        calendarVisibility[calendar.id] = checkbox.checked;
+      const visible = calendarVisibility[calendar.id] !== false;
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = `google-calendar-toggle${visible ? ' active' : ''}`;
+      toggle.setAttribute('aria-pressed', String(visible));
+      toggle.setAttribute('aria-label', `${visible ? 'Hide' : 'Show'} ${calendar.summary}`);
+      if (/^#[0-9a-f]{6}$/i.test(calendar.backgroundColor || '')) {
+        toggle.style.setProperty('--google-calendar-color', calendar.backgroundColor);
+      }
+      if (/^#[0-9a-f]{6}$/i.test(calendar.foregroundColor || '')) {
+        toggle.style.setProperty('--google-calendar-foreground', calendar.foregroundColor);
+      }
+      toggle.addEventListener('click', () => {
+        calendarVisibility[calendar.id] = !visible;
         saveCalendarVisibility();
+        renderGoogleCalendars();
         renderCalendar();
       });
       const swatch = document.createElement('span');
@@ -176,8 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const name = document.createElement('span');
       name.className = 'google-calendar-name';
       name.textContent = calendar.summary || calendar.id;
-      label.append(checkbox, swatch, name);
-      googleCalendarsList.appendChild(label);
+      toggle.append(swatch, name);
+      googleCalendarsList.appendChild(toggle);
     });
   };
   renderGoogleCalendars();
@@ -236,7 +246,10 @@ document.addEventListener('DOMContentLoaded', () => {
       block.className = `gcal-event ${eventColorClass(ev)}`;
       block.style.cssText = `${eventBlockStyle(ev)}${eventColorStyle(ev)}`;
       block.title = `${ev.time}–${ev.endTime} ${ev.title}`;
-      block.innerHTML = `<strong>${escapeHtml(ev.title)}</strong><span>${escapeHtml(ev.time || '')} – ${escapeHtml(ev.endTime || '')}</span>`;
+      const duration = minutesFromTime(ev.endTime || addMinutesToTime(ev.time || '09:00', 60)) - minutesFromTime(ev.time || '09:00');
+      block.innerHTML = duration < 45
+        ? `<strong>${escapeHtml(ev.title)}</strong>`
+        : `<strong>${escapeHtml(ev.title)}</strong><span>${escapeHtml(ev.time || '')} – ${escapeHtml(ev.endTime || '')}</span>`;
       block.addEventListener('click', (e) => {
         e.stopPropagation();
         selectedDate = parseDateKey(key);
@@ -358,7 +371,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const renderSelectedDayEvents = () => {
     const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
-    selectedDateTitle.textContent = selectedDate.toLocaleDateString(undefined, options);
+    selectedDateTitle.textContent = toDateKey(selectedDate) === toDateKey(new Date())
+      ? 'Events for today'
+      : `Events for ${selectedDate.toLocaleDateString(undefined, options)}`;
     const dayEvs = eventsForDate(toDateKey(selectedDate));
     dayEventsList.innerHTML = '';
     if (dayEvs.length === 0) {
@@ -428,6 +443,12 @@ document.addEventListener('DOMContentLoaded', () => {
     renderUpcomingEvents();
   };
 
+  openAddEventBtn.addEventListener('click', () => {
+    addEventModal.showModal();
+    eventTitleInput.focus();
+  });
+  closeAddEventBtn.addEventListener('click', () => addEventModal.close());
+
   addEventForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const title = eventTitleInput.value.trim();
@@ -443,6 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     saveEvents(events);
     eventTitleInput.value = '';
+    addEventModal.close();
     renderCalendar();
   });
 

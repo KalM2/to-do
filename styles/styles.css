@@ -1388,8 +1388,6 @@ input[type="checkbox"]:checked::after {
   flex-direction: column;
   gap: 8px;
   margin-top: 15px;
-  max-height: 520px;
-  overflow-y: auto;
   padding-right: 6px;
 }
 
@@ -1570,13 +1568,15 @@ input[type="checkbox"]:checked::after {
    * =================================================== */
 .calendar-layout {
   display: flex;
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   gap: 25px;
+  align-items: flex-start;
 }
 
 .calendar-grid-card {
   flex: 2;
+  min-width: 0;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -1597,12 +1597,14 @@ input[type="checkbox"]:checked::after {
 
 .calendar-days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
   margin-top: 10px;
+  min-width: 0;
 }
 
 .calendar-day-cell {
+  min-width: 0;
   min-height: 85px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -1612,6 +1614,7 @@ input[type="checkbox"]:checked::after {
   cursor: pointer;
   transition: 0.2s;
   background: var(--panel);
+  overflow: hidden;
 }
 
 .calendar-day-cell:hover {
@@ -1645,10 +1648,14 @@ input[type="checkbox"]:checked::after {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
 }
 
 .event-mini-pill {
+  min-width: 0;
+  max-width: 100%;
   font-size: 0.68rem;
   padding: 2px 6px;
   border-radius: 4px;
@@ -1665,7 +1672,8 @@ input[type="checkbox"]:checked::after {
 }
 
 .calendar-sidebar {
-  flex: 1;
+  flex: 0 0 300px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -1673,23 +1681,35 @@ input[type="checkbox"]:checked::after {
 
 .google-calendar-list {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .google-calendar-toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 34px;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 38px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
   cursor: pointer;
+  transition: background-color 0.16s, color 0.16s, border-color 0.16s;
 }
 
-.google-calendar-toggle input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  accent-color: var(--accent);
+.google-calendar-toggle.active {
+  border-color: var(--google-calendar-color, var(--accent));
+  background: var(--google-calendar-color, var(--accent));
+  color: var(--google-calendar-foreground, var(--accent-contrast));
+}
+
+.google-calendar-toggle:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .google-calendar-swatch {
@@ -1703,6 +1723,7 @@ input[type="checkbox"]:checked::after {
 .google-calendar-name {
   overflow-wrap: anywhere;
   font-size: 0.9rem;
+  text-align: left;
 }
 
 .calendar-list-message {
@@ -2293,13 +2314,69 @@ input[type="checkbox"]:checked::after {
 }
 
 .calendar-main-pane {
-  flex: 2;
+  flex: 1 1 auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.google-calendars-widget {
+  width: 100%;
+}
+
+.day-agenda-widget,
+.upcoming-widget {
+  min-width: 0;
+}
+
+.floating-add-event {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 50;
+  width: 62px;
+  height: 62px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.16s, filter 0.16s;
+}
+
+.floating-add-event:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+
+.floating-add-event span {
+  font-size: 2.2rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.add-event-modal {
+  width: min(440px, calc(100vw - 32px));
+}
+
+.add-event-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.add-event-modal h3 {
+  margin: 0;
 }
 
 .timed-cal-card {
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .gcal-week-header {
@@ -2335,14 +2412,16 @@ input[type="checkbox"]:checked::after {
 }
 
 .gcal-scroll {
-  max-height: 68vh;
-  overflow: auto;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .planner-day-scroll {
-  max-height: 560px;
+  max-height: none;
   border: 1px solid var(--border);
   border-radius: 12px;
+  overflow: visible;
 }
 
 .gcal-timed-grid {
@@ -2369,7 +2448,12 @@ input[type="checkbox"]:checked::after {
   min-width: 0;
 }
 
-.gcal-single-day,
+.gcal-single-day {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  width: 100%;
+}
+
 .planner-day-grid {
   grid-template-columns: 64px 1fr;
 }
@@ -2405,7 +2489,8 @@ input[type="checkbox"]:checked::after {
   right: 4px;
   border: none;
   border-radius: 8px;
-  padding: 4px 6px;
+  min-height: 24px;
+  padding: 2px 6px;
   text-align: left;
   cursor: pointer;
   overflow: hidden;
@@ -2414,8 +2499,17 @@ input[type="checkbox"]:checked::after {
   background: var(--brand-navy);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   z-index: 1;
+}
+
+.gcal-event strong {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.74rem;
+  line-height: 1.2;
 }
 
 .gcal-event span {
@@ -2691,6 +2785,10 @@ input[type="checkbox"]:checked::after {
     min-width: 700px;
   }
 
+  .gcal-days-wrap.gcal-single-day {
+    min-width: 0;
+  }
+
   .gcal-week-header {
     min-width: 764px;
   }
@@ -2712,6 +2810,27 @@ input[type="checkbox"]:checked::after {
 @media (max-width: 600px) {
   #greetings h1 {
     font-size: 2.6rem;
+  }
+
+  .planner-date-nav,
+  .calendar-month-nav {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .planner-date-title,
+  .month-nav-title {
+    min-width: 0;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  #todayPlannerBtn,
+  #todayMonthBtn {
+    grid-column: 1 / -1;
+    justify-self: center;
   }
 
   nav ul {
