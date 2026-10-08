@@ -363,6 +363,10 @@ nav ul li a.active::after {
 /* * ===================================================
    * THEME PICKER MENU STRIP (Omarchy Style)
    * =================================================== */
+.theme-picker[hidden] {
+  display: none !important;
+}
+
 .theme-picker {
   position: sticky;
   top: 56px;
@@ -708,19 +712,8 @@ nav ul li a.active::after {
   font-style: italic;
 }
 
-.editable-name {
-  border-bottom: 2px dashed var(--border-strong);
-  cursor: pointer;
+.greeting-name {
   padding: 0 4px;
-  transition: 0.2s;
-  outline: none;
-}
-
-.editable-name:hover,
-.editable-name:focus {
-  border-bottom-color: var(--accent);
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
 }
 
 /* ? VIEW TOGGLES & DASHBOARD CONTROLS */
@@ -2193,9 +2186,404 @@ input[type="checkbox"]:checked::after {
   display: none !important;
 }
 
+.project-card-clickable {
+  cursor: pointer;
+}
+
+.project-card-clickable:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.project-open-hint {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.eisenhower-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.eisenhower-cell {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eisenhower-cell-header h3 {
+  font-size: 1.05rem;
+  color: var(--brand-navy);
+}
+
+.eisenhower-cell-header p {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.matrix-list {
+  flex: 1;
+  min-height: 140px;
+}
+
+.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px 8px;
+}
+
+.calendar-sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.google-cal-layout {
+  align-items: stretch;
+}
+
+.calendar-main-pane {
+  flex: 2;
+  min-width: 0;
+}
+
+.timed-cal-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.gcal-week-header {
+  display: grid;
+  grid-template-columns: 64px repeat(7, 1fr);
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.gcal-week-head-cell {
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border);
+  padding: 10px 6px;
+  cursor: pointer;
+  color: var(--text);
+  font-family: "Fraunces", serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.gcal-week-head-cell.today-cell strong {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gcal-scroll {
+  max-height: 68vh;
+  overflow: auto;
+}
+
+.planner-day-scroll {
+  max-height: 560px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.gcal-timed-grid {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  position: relative;
+}
+
+.gcal-hours {
+  background: var(--panel);
+}
+
+.gcal-hour-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: right;
+  padding: 0 8px;
+  border-top: 1px solid var(--border);
+}
+
+.gcal-days-wrap {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(90px, 1fr));
+  min-width: 0;
+}
+
+.gcal-single-day,
+.planner-day-grid {
+  grid-template-columns: 64px 1fr;
+}
+
+.planner-day-grid {
+  display: grid;
+}
+
+.gcal-day-col {
+  position: relative;
+  border-left: 1px solid var(--border);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(56px - 1px),
+    var(--border) calc(56px - 1px),
+    var(--border) 56px
+  );
+}
+
+.gcal-hour-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
+}
+
+.gcal-event {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 6px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  font-family: "Fraunces", serif;
+  color: var(--accent-contrast);
+  background: var(--brand-navy);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 1;
+}
+
+.gcal-event span {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.gcal-event.tag-work,
+.gcal-event.tag-focus { background: var(--brand-navy); }
+.gcal-event.tag-personal { background: #00a6ed; }
+.gcal-event.tag-urgent,
+.gcal-event.tag-meeting { background: var(--accent); }
+.gcal-event.tag-wellness,
+.gcal-event.tag-break { background: #2a9d8f; }
+.gcal-event.tag-routine { background: #6c5ce7; }
+
+.inline-time-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.section-heading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pick-task-btn {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+}
+
+.journal-widget {
+  min-height: 420px;
+}
+
+.journal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.journal-toolbar button {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-family: "Fraunces", serif;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.journal-toolbar button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.journal-editor {
+  min-height: 280px;
+  max-height: 480px;
+  overflow-y: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--panel-2);
+  outline: none;
+  line-height: 1.55;
+}
+
+.journal-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--faint);
+}
+
+.journal-editor h1 { font-size: 1.6rem; margin: 0.4em 0; }
+.journal-editor h2 { font-size: 1.3rem; margin: 0.4em 0; }
+.journal-editor h3 { font-size: 1.1rem; margin: 0.4em 0; }
+.journal-editor ul, .journal-editor ol { padding-left: 1.3em; }
+
+.journal-modal {
+  max-width: 860px;
+  width: 96%;
+}
+
+.journal-editor-large {
+  min-height: 55vh;
+  max-height: 65vh;
+}
+
+.journal-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.task-picker-list {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.task-picker-group h4 {
+  margin-bottom: 6px;
+  color: var(--brand-navy);
+}
+
+.task-picker-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  font-family: "Fraunces", serif;
+  color: var(--text);
+}
+
+.task-picker-item:hover {
+  border-color: var(--accent);
+}
+
+.focus-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 22px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 20px 40px;
+}
+
+.focus-timer-card .timer-display {
+  font-size: 4.4rem;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--brand-navy);
+}
+
+.focus-totals, .focus-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.focus-total-row, .focus-log-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.focus-chip {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.modal-help {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+.nav-menu-toggle {
+  display: none;
+}
+
+.priority-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-family: "Fraunces", serif;
+  color: var(--text);
+  padding: 6px 0;
+  outline: none;
+}
+
 /* * ===================================================
    * RESPONSIVE ADJUSTMENTS
    * =================================================== */
+@media (max-width: 980px) {
+  .focus-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .eisenhower-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   main,
   .planner-layout,
@@ -2212,6 +2600,7 @@ input[type="checkbox"]:checked::after {
 
   .kanban-board {
     grid-template-columns: repeat(2, 1fr);
+    overflow-x: auto;
   }
 
   .habit-metrics-grid {
@@ -2219,17 +2608,69 @@ input[type="checkbox"]:checked::after {
   }
 
   .header-inner {
-    justify-content: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .nav-menu-toggle {
+    display: inline-flex;
+  }
+
+  .header-nav {
+    display: none;
+    width: 100%;
+    order: 5;
+  }
+
+  body.nav-open .header-nav {
+    display: block;
+  }
+
+  nav.header-nav ul {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 8px 0 12px;
+  }
+
+  nav ul li a {
+    display: block;
+    padding: 10px 8px;
+  }
+
+  nav ul li a.active::after {
+    display: none;
+  }
+
+  .gcal-days-wrap {
+    min-width: 700px;
+  }
+
+  .gcal-week-header {
+    min-width: 764px;
+  }
+
+  .calendar-toolbar {
+    flex-direction: column;
+  }
+
+  .project-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .projects-control-bar {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
 @media (max-width: 600px) {
   #greetings h1 {
-    font-size: 3.5rem;
+    font-size: 2.6rem;
   }
 
   nav ul {
-    gap: 14px;
+    gap: 8px;
   }
 
   .kanban-board {
@@ -2238,5 +2679,26 @@ input[type="checkbox"]:checked::after {
 
   .profile-grid-inputs {
     grid-template-columns: 1fr;
+  }
+
+  .header-btn .theme-toggle-label,
+  .profile-toggle-name {
+    display: none;
+  }
+
+  .priority-item {
+    flex-wrap: wrap;
+  }
+
+  .journal-editor {
+    min-height: 220px;
+  }
+
+  .focus-timer-card .timer-display {
+    font-size: 3.2rem;
+  }
+
+  #NewTask, .planner-sidebar, .calendar-sidebar {
+    width: 100%;
   }
 }

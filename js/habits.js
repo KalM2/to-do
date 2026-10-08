@@ -61,9 +61,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load Data
   const loadHabits = () => {
     const raw = localStorage.getItem('simpleDay_habits_data');
-    if (raw) {
+    if (raw !== null) {
+      SimpleDayDefaults.markInitialized('habits');
       try { return JSON.parse(raw); } catch (e) { return []; }
     }
+    if (!SimpleDayDefaults.shouldSeed('habits')) return [];
 
     const today = new Date();
     const dMinus1 = new Date(today); dMinus1.setDate(today.getDate() - 1);
@@ -116,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     ];
     localStorage.setItem('simpleDay_habits_data', JSON.stringify(defaultHabits));
+    SimpleDayDefaults.markInitialized('habits');
     return defaultHabits;
   };
 

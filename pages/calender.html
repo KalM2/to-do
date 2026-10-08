@@ -12,9 +12,9 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="../styles/styles.css" />
   <script>
-    (function() {
+    (function () {
       var t = null;
-      try { t = localStorage.getItem("simpleDay_theme"); } catch(e) {}
+      try { t = localStorage.getItem("simpleDay_theme"); } catch (e) { }
       document.documentElement.dataset.theme = t || "warm-cream";
     })();
   </script>
@@ -35,16 +35,18 @@
           <li><a href="./planner.html">Planner</a></li>
           <li><a href="./calender.html" class="active">Calender</a></li>
           <li><a href="./projects.html">Projects</a></li>
+          <li><a href="./focus.html">Focus</a></li>
           <li><a href="./habits.html">Habits</a></li>
         </ul>
       </nav>
       <div class="header-actions">
         <button type="button" class="header-btn theme-toggle" aria-label="Choose color theme">
           <svg class="palette-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1 .9-1.8 2-1.8H17a4 4 0 0 0 4-4c0-4.4-4-7.7-9-7.7Z"/>
-            <circle cx="7.5" cy="11" r="1.3" fill="var(--bg)"/>
-            <circle cx="10.5" cy="7" r="1.3" fill="var(--bg)"/>
-            <circle cx="15" cy="7.5" r="1.3" fill="var(--bg)"/>
+            <path
+              d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1 .9-1.8 2-1.8H17a4 4 0 0 0 4-4c0-4.4-4-7.7-9-7.7Z" />
+            <circle cx="7.5" cy="11" r="1.3" fill="var(--bg)" />
+            <circle cx="10.5" cy="7" r="1.3" fill="var(--bg)" />
+            <circle cx="15" cy="7.5" r="1.3" fill="var(--bg)" />
           </svg>
           <span class="theme-toggle-label">Warm Cream</span>
         </button>
@@ -57,44 +59,67 @@
   </header>
 
   <div id="greetings">
-    <h1>Monthly Calendar</h1>
-    <div class="calendar-month-nav">
-      <button type="button" id="prevMonthBtn" class="nav-arrow-btn" title="Previous Month">‹</button>
-      <span id="currentMonthYear" class="month-nav-title"></span>
-      <button type="button" id="nextMonthBtn" class="nav-arrow-btn" title="Next Month">›</button>
-      <button type="button" id="todayMonthBtn" class="pill">Today</button>
+    <h1>Calendar</h1>
+    <div class="calendar-toolbar">
+      <div class="calendar-month-nav">
+        <button type="button" id="prevRangeBtn" class="nav-arrow-btn" title="Previous">‹</button>
+        <span id="currentMonthYear" class="month-nav-title"></span>
+        <button type="button" id="nextRangeBtn" class="nav-arrow-btn" title="Next">›</button>
+        <button type="button" id="todayMonthBtn" class="pill">Today</button>
+      </div>
+      <div class="view-toggle-group" id="calendarViewToggle">
+        <button type="button" class="btn-toggle" data-view="month">Month</button>
+        <button type="button" class="btn-toggle active" data-view="week">Week</button>
+        <button type="button" class="btn-toggle" data-view="day">Day</button>
+      </div>
+      <div class="calendar-sync-actions">
+        <label class="pill pill-action btn-file-label">
+          Import ICS
+          <input type="file" id="icsImportInput" accept=".ics,text/calendar" hidden />
+        </label>
+        <button type="button" id="googleSyncBtn" class="pill">Connect Google Calendar</button>
+      </div>
     </div>
+    <p id="calendarSyncStatus" class="date-subtitle"></p>
   </div>
 
-  <main class="calendar-layout">
-    <!-- Monthly Grid Container -->
-    <div class="calendar-grid-card">
-      <div class="calendar-weekdays-header">
-        <div>Sun</div>
-        <div>Mon</div>
-        <div>Tue</div>
-        <div>Wed</div>
-        <div>Thu</div>
-        <div>Fri</div>
-        <div>Sat</div>
+  <main class="calendar-layout google-cal-layout">
+    <div class="calendar-main-pane">
+      <div id="monthView" class="calendar-grid-card hidden">
+        <div class="calendar-weekdays-header">
+          <div>Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+        </div>
+        <div class="calendar-days-grid" id="calendarDaysGrid"></div>
       </div>
-      <div class="calendar-days-grid" id="calendarDaysGrid">
-        <!-- Rendered via JS -->
+
+      <div id="weekView" class="calendar-grid-card timed-cal-card">
+        <div class="gcal-week-header" id="weekHeader"></div>
+        <div class="gcal-scroll" id="weekScroll">
+          <div class="gcal-timed-grid" id="weekGrid"></div>
+        </div>
+      </div>
+
+      <div id="dayView" class="calendar-grid-card timed-cal-card hidden">
+        <div class="gcal-scroll" id="dayScroll">
+          <div class="gcal-timed-grid gcal-day-grid" id="dayGrid"></div>
+        </div>
       </div>
     </div>
 
-    <div class="vertical-divider"></div>
-
-    <!-- Day Inspector & Events Sidebar -->
     <aside class="calendar-sidebar">
       <div class="planner-card day-agenda-widget">
         <h3 id="selectedDateTitle" class="agenda-date-title">Events</h3>
-        
-        <!-- Add Event Form -->
         <form id="addEventForm" class="add-event-form">
           <input type="text" id="eventTitleInput" placeholder="Event title..." required />
           <div class="event-time-row">
-            <input type="time" id="eventTimeInput" value="09:00" />
+            <label class="inline-time-label">Start <input type="time" id="eventTimeInput" value="09:00" /></label>
+            <label class="inline-time-label">End <input type="time" id="eventEndTimeInput" value="10:00" /></label>
             <div class="pill-container" id="eventCategoryPills">
               <button type="button" class="pill selected" data-cat="Work">Work</button>
               <button type="button" class="pill" data-cat="Personal">Personal</button>
@@ -104,23 +129,18 @@
           </div>
           <button type="submit" id="addEventBtn" class="pill pill-action">+ Add Event</button>
         </form>
-
-        <!-- Events List for Selected Day -->
-        <div class="day-events-list" id="dayEventsList">
-          <!-- Rendered via JS -->
-        </div>
+        <div class="day-events-list" id="dayEventsList"></div>
       </div>
 
-      <!-- Upcoming Events Agenda -->
       <div class="planner-card upcoming-widget">
-        <p class="pill-label">Upcoming This Month</p>
-        <div class="upcoming-events-list" id="upcomingEventsList">
-          <!-- Rendered via JS -->
-        </div>
+        <p class="pill-label">Upcoming</p>
+        <div class="upcoming-events-list" id="upcomingEventsList"></div>
       </div>
     </aside>
   </main>
 
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <script src="../js/db.js"></script>
   <script src="../js/theme-profile.js"></script>
   <script src="../js/calendar.js"></script>
 </body>

@@ -1,30 +1,39 @@
-// Projects & Kanban Board Logic
+// Projects: click into a project for Kanban + Eisenhower Matrix
 document.addEventListener('DOMContentLoaded', () => {
-  // SVGs
   const deleteSVG = `<svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>`;
 
-  // Helper: Escape HTML
   const escapeHtml = (text) => {
     const div = document.createElement('div');
-    div.textContent = text;
+    div.textContent = text == null ? '' : String(text);
     return div.innerHTML;
   };
 
-  // State
-  let activeView = 'projects'; // 'projects' or 'kanban'
+  const quadFromPriority = (priority) => {
+    if (priority === 'High') return 'ui';
+    if (priority === 'Low') return 'n';
+    return 'i';
+  };
+
+  let boardMode = 'kanban';
+  let activeProjectId = null;
   let targetKanbanColumn = 'todo';
   let selectedCardPriority = 'Medium';
+  let selectedCardQuad = 'ui';
   let selectedProjectColor = 'navy';
 
-  // DOM Elements
-  const btnProjectsView = document.getElementById('btnProjectsView');
-  const btnKanbanView = document.getElementById('btnKanbanView');
   const projectCardsView = document.getElementById('projectCardsView');
-  const kanbanBoardView = document.getElementById('kanbanBoardView');
+  const projectDetailView = document.getElementById('projectDetailView');
   const projectCardsGrid = document.getElementById('projectCardsGrid');
-
-  // Modals
+  const kanbanBoardView = document.getElementById('kanbanBoardView');
+  const matrixView = document.getElementById('matrixView');
+  const backToProjectsBtn = document.getElementById('backToProjectsBtn');
+  const projectBoardToggle = document.getElementById('projectBoardToggle');
+  const btnKanbanView = document.getElementById('btnKanbanView');
+  const btnMatrixView = document.getElementById('btnMatrixView');
   const openNewProjectModalBtn = document.getElementById('openNewProjectModalBtn');
+  const projectsPageTitle = document.getElementById('projectsPageTitle');
+  const projectsPageSubtitle = document.getElementById('projectsPageSubtitle');
+
   const newProjectModal = document.getElementById('newProjectModal');
   const newProjectForm = document.getElementById('newProjectForm');
   const projectTitleInput = document.getElementById('projectTitleInput');
@@ -36,16 +45,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const kanbanTaskModal = document.getElementById('kanbanTaskModal');
   const kanbanTaskForm = document.getElementById('kanbanTaskForm');
   const cardTitleInput = document.getElementById('cardTitleInput');
-  const cardProjectSelect = document.getElementById('cardProjectSelect');
   const cardPriorityPills = document.getElementById('cardPriorityPills');
+  const cardQuadPills = document.getElementById('cardQuadPills');
   const closeCardModalBtn = document.getElementById('closeCardModalBtn');
 
-  // Load / Save Data
   const loadProjects = () => {
     const raw = localStorage.getItem('simpleDay_projects_data');
-    if (raw) {
+    if (raw !== null) {
+      SimpleDayDefaults.markInitialized('projects');
       try { return JSON.parse(raw); } catch (e) { return []; }
     }
+    if (!SimpleDayDefaults.shouldSeed('projects')) return [];
     const defaultProjects = [
       {
         id: 'proj-1',
@@ -73,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     ];
     localStorage.setItem('simpleDay_projects_data', JSON.stringify(defaultProjects));
+    SimpleDayDefaults.markInitialized('projects');
     return defaultProjects;
   };
 
@@ -82,16 +93,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const loadKanban = () => {
     const raw = localStorage.getItem('simpleDay_kanban_cards');
-    if (raw) {
-      try { return JSON.parse(raw); } catch (e) { return []; }
+    if (raw !== null) {
+      SimpleDayDefaults.markInitialized('kanban_cards');
+      try {
+        return JSON.parse(raw).map((c) => ({
+          ...c,
+          projectId: c.projectId || '',
+          eisenhower: c.eisenhower || quadFromPriority(c.priority),
+          focusSeconds: c.focusSeconds || 0
+        }));
+      } catch (e) {
+        return [];
+      }
     }
+    if (!SimpleDayDefaults.shouldSeed('kanban_cards')) return [];
     const defaultCards = [
-      { id: 'c-1', title: 'Audit navigation links & accessibility', column: 'todo', project: 'Simple Day Web Suite', priority: 'High' },
-      { id: 'c-2', title: 'Polish responsive layout & styling', column: 'in-progress', project: 'Simple Day Web Suite', priority: 'Medium' },
-      { id: 'c-3', title: 'Verify localStorage persistence edge cases', column: 'review', project: 'Simple Day Web Suite', priority: 'High' },
-      { id: 'c-4', title: 'Design Fraunces & Tangerine font theme', column: 'done', project: 'Simple Day Web Suite', priority: 'Low' }
+      { id: 'c-1', title: 'Audit navigation links & accessibility', column: 'todo', project: 'Simple Day Web Suite', projectId: 'proj-1', priority: 'High', eisenhower: 'ui', focusSeconds: 0 },
+      { id: 'c-2', title: 'Polish responsive layout & styling', column: 'in-progress', project: 'Simple Day Web Suite', projectId: 'proj-1', priority: 'Medium', eisenhower: 'i', focusSeconds: 0 },
+      { id: 'c-3', title: 'Verify localStorage persistence edge cases', column: 'review', project: 'Simple Day Web Suite', projectId: 'proj-1', priority: 'High', eisenhower: 'ui', focusSeconds: 0 },
+      { id: 'c-4', title: 'Design Fraunces & Tangerine font theme', column: 'done', project: 'Simple Day Web Suite', projectId: 'proj-1', priority: 'Low', eisenhower: 'n', focusSeconds: 0 }
     ];
     localStorage.setItem('simpleDay_kanban_cards', JSON.stringify(defaultCards));
+    SimpleDayDefaults.markInitialized('kanban_cards');
     return defaultCards;
   };
 
@@ -102,25 +125,114 @@ document.addEventListener('DOMContentLoaded', () => {
   let projects = loadProjects();
   let kanbanCards = loadKanban();
 
-  // View Switching
-  btnProjectsView.addEventListener('click', () => {
-    activeView = 'projects';
-    btnProjectsView.classList.add('active');
-    btnKanbanView.classList.remove('active');
-    projectCardsView.classList.remove('hidden');
-    kanbanBoardView.classList.add('hidden');
-  });
+  const activeProject = () => projects.find((p) => p.id === activeProjectId) || null;
 
-  btnKanbanView.addEventListener('click', () => {
-    activeView = 'kanban';
-    btnKanbanView.classList.add('active');
-    btnProjectsView.classList.remove('active');
-    kanbanBoardView.classList.remove('hidden');
-    projectCardsView.classList.add('hidden');
+  const projectCards = () => {
+    const proj = activeProject();
+    if (!proj) return [];
+    return kanbanCards.filter((c) => c.projectId === proj.id || (!c.projectId && c.project === proj.title));
+  };
+
+  const formatFocus = (seconds) => {
+    const s = seconds || 0;
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m focused`;
+    if (m > 0) return `${m}m focused`;
+    return '';
+  };
+
+  const createCardEl = (card) => {
+    const item = document.createElement('div');
+    item.className = 'kanban-card';
+    item.draggable = true;
+    item.dataset.id = card.id;
+    const prioClass = `prio-${(card.priority || 'medium').toLowerCase()}`;
+    const focusLabel = formatFocus(card.focusSeconds);
+    item.innerHTML = `
+      <div class="kanban-card-top">
+        <span class="kanban-project-tag">${escapeHtml(card.priority || 'Medium')}</span>
+        <button type="button" class="action-btn del-btn" title="Delete card">${deleteSVG}</button>
+      </div>
+      <p class="kanban-card-title">${escapeHtml(card.title)}</p>
+      <div class="kanban-card-bottom">
+        <span class="slot-badge ${prioClass}">${escapeHtml(card.priority || 'Medium')}</span>
+        ${focusLabel ? `<span class="focus-chip">${escapeHtml(focusLabel)}</span>` : ''}
+      </div>
+    `;
+    item.addEventListener('dragstart', (e) => {
+      item.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', card.id);
+    });
+    item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    item.querySelector('.del-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      kanbanCards = kanbanCards.filter((c) => c.id !== card.id);
+      saveKanban(kanbanCards);
+      renderBoards();
+    });
+    return item;
+  };
+
+  const renderKanban = () => {
+    const columns = ['todo', 'in-progress', 'review', 'done'];
+    const cards = projectCards();
+    columns.forEach((col) => {
+      const listEl = document.querySelector(`.kanban-cards-list[data-column="${col}"]`);
+      const countEl = document.getElementById(`count-${col}`);
+      const cardsInCol = cards.filter((c) => c.column === col);
+      if (countEl) countEl.textContent = cardsInCol.length;
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      cardsInCol.forEach((card) => listEl.appendChild(createCardEl(card)));
+    });
+  };
+
+  const renderMatrix = () => {
+    const cards = projectCards();
+    ['ui', 'i', 'u', 'n'].forEach((quad) => {
+      const listEl = document.querySelector(`.matrix-list[data-quad="${quad}"]`);
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      cards.filter((c) => (c.eisenhower || 'n') === quad).forEach((card) => {
+        listEl.appendChild(createCardEl(card));
+      });
+    });
+  };
+
+  const renderBoards = () => {
     renderKanban();
-  });
+    renderMatrix();
+  };
 
-  // Render Project Cards
+  const showList = () => {
+    activeProjectId = null;
+    projectCardsView.classList.remove('hidden');
+    projectDetailView.classList.add('hidden');
+    backToProjectsBtn.classList.add('hidden');
+    projectBoardToggle.classList.add('hidden');
+    openNewProjectModalBtn.classList.remove('hidden');
+    projectsPageTitle.textContent = 'Projects & Workspaces';
+    projectsPageSubtitle.textContent = 'Open a project for its Kanban board and Eisenhower Matrix';
+    history.replaceState(null, '', location.pathname);
+    renderProjectCards();
+  };
+
+  const openProject = (id) => {
+    const proj = projects.find((p) => p.id === id);
+    if (!proj) return;
+    activeProjectId = id;
+    projectCardsView.classList.add('hidden');
+    projectDetailView.classList.remove('hidden');
+    backToProjectsBtn.classList.remove('hidden');
+    projectBoardToggle.classList.remove('hidden');
+    openNewProjectModalBtn.classList.add('hidden');
+    projectsPageTitle.textContent = proj.title;
+    projectsPageSubtitle.textContent = proj.desc || 'Kanban and Eisenhower Matrix for this project';
+    history.replaceState(null, '', `?project=${encodeURIComponent(id)}`);
+    renderBoards();
+  };
+
   const renderProjectCards = () => {
     projectCardsGrid.innerHTML = '';
     if (projects.length === 0) {
@@ -128,102 +240,48 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Update project select options in Kanban modal
-    cardProjectSelect.innerHTML = '<option value="General">General</option>';
-    projects.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.title;
-      opt.textContent = p.title;
-      cardProjectSelect.appendChild(opt);
-    });
-
-    projects.forEach(proj => {
+    projects.forEach((proj) => {
       const card = document.createElement('div');
-      card.className = `project-card color-theme-${proj.color || 'navy'}`;
-
-      const totalMilestones = proj.milestones.length;
-      const completedMilestones = proj.milestones.filter(m => m.completed).length;
-      const pct = totalMilestones === 0 ? 0 : Math.round((completedMilestones / totalMilestones) * 100);
-
-      let milestonesHtml = '';
-      proj.milestones.forEach(m => {
-        milestonesHtml += `
-          <div class="milestone-item ${m.completed ? 'completed' : ''}" data-mid="${m.id}">
-            <input type="checkbox" class="milestone-cb" ${m.completed ? 'checked' : ''} aria-label="Mark milestone complete">
-            <span class="milestone-text">${escapeHtml(m.text)}</span>
-            <button type="button" class="action-btn del-milestone-btn" title="Delete Milestone">${deleteSVG}</button>
-          </div>
-        `;
-      });
+      card.className = `project-card color-theme-${proj.color || 'navy'} project-card-clickable`;
+      const related = kanbanCards.filter((c) => c.projectId === proj.id || (!c.projectId && c.project === proj.title));
+      const done = related.filter((c) => c.column === 'done').length;
+      const total = related.length;
+      const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+      const focusSecs = related.reduce((sum, c) => sum + (c.focusSeconds || 0), 0);
 
       card.innerHTML = `
         <div class="project-card-header">
           <div>
             <h3 class="project-card-title">${escapeHtml(proj.title)}</h3>
-            ${proj.dueDate ? `<span class="project-due-date">Due: ${proj.dueDate}</span>` : ''}
+            ${proj.dueDate ? `<span class="project-due-date">Due: ${escapeHtml(proj.dueDate)}</span>` : ''}
           </div>
           <button type="button" class="action-btn del-project-btn" title="Delete Project">${deleteSVG}</button>
         </div>
         <p class="project-desc">${escapeHtml(proj.desc || '')}</p>
-
         <div class="project-progress-container">
           <div class="project-progress-meta">
-            <span>Progress (${completedMilestones}/${totalMilestones})</span>
+            <span>Tasks (${done}/${total})</span>
             <span class="progress-pct">${pct}%</span>
           </div>
           <div class="stats-bar-track">
             <div class="stats-bar-fill" style="width: ${pct}%;"></div>
           </div>
         </div>
-
-        <div class="milestones-section">
-          <p class="pill-label">Milestones</p>
-          <div class="milestones-list">${milestonesHtml}</div>
-          <input type="text" class="add-milestone-input" placeholder="+ Add milestone and hit Enter...">
-        </div>
+        <p class="project-open-hint">${total} tasks · ${formatFocus(focusSecs) || 'No focus time yet'} · Open board →</p>
       `;
 
-      // Milestone checkboxes
-      card.querySelectorAll('.milestone-cb').forEach(cb => {
-        cb.addEventListener('change', () => {
-          const mid = cb.closest('.milestone-item').dataset.mid;
-          const target = proj.milestones.find(m => m.id === mid);
-          if (target) {
-            target.completed = cb.checked;
-            saveProjects(projects);
-            renderProjectCards();
-          }
-        });
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.del-project-btn')) return;
+        openProject(proj.id);
       });
 
-      // Delete milestone
-      card.querySelectorAll('.del-milestone-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const mid = btn.closest('.milestone-item').dataset.mid;
-          proj.milestones = proj.milestones.filter(m => m.id !== mid);
-          saveProjects(projects);
-          renderProjectCards();
-        });
-      });
-
-      // Add new milestone input
-      const milestoneInput = card.querySelector('.add-milestone-input');
-      milestoneInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const text = milestoneInput.value.trim();
-          if (text) {
-            proj.milestones.push({ id: 'm-' + Date.now(), text, completed: false });
-            saveProjects(projects);
-            renderProjectCards();
-          }
-        }
-      });
-
-      // Delete Project
-      card.querySelector('.del-project-btn').addEventListener('click', () => {
+      card.querySelector('.del-project-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
         if (confirm(`Delete project "${proj.title}"?`)) {
-          projects = projects.filter(p => p.id !== proj.id);
+          projects = projects.filter((p) => p.id !== proj.id);
+          kanbanCards = kanbanCards.filter((c) => c.projectId !== proj.id && c.project !== proj.title);
           saveProjects(projects);
+          saveKanban(kanbanCards);
           renderProjectCards();
         }
       });
@@ -232,59 +290,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // Render Kanban Board
-  const renderKanban = () => {
-    const columns = ['todo', 'in-progress', 'review', 'done'];
+  backToProjectsBtn.addEventListener('click', showList);
 
-    columns.forEach(col => {
-      const listEl = document.querySelector(`.kanban-cards-list[data-column="${col}"]`);
-      const countEl = document.getElementById(`count-${col}`);
-      const cardsInCol = kanbanCards.filter(c => c.column === col);
+  btnKanbanView.addEventListener('click', () => {
+    boardMode = 'kanban';
+    btnKanbanView.classList.add('active');
+    btnMatrixView.classList.remove('active');
+    kanbanBoardView.classList.remove('hidden');
+    matrixView.classList.add('hidden');
+  });
 
-      if (countEl) countEl.textContent = cardsInCol.length;
-      if (!listEl) return;
+  btnMatrixView.addEventListener('click', () => {
+    boardMode = 'matrix';
+    btnMatrixView.classList.add('active');
+    btnKanbanView.classList.remove('active');
+    matrixView.classList.remove('hidden');
+    kanbanBoardView.classList.add('hidden');
+    renderMatrix();
+  });
 
-      listEl.innerHTML = '';
-      cardsInCol.forEach(card => {
-        const item = document.createElement('div');
-        item.className = 'kanban-card';
-        item.draggable = true;
-        item.dataset.id = card.id;
-
-        const prioClass = `prio-${(card.priority || 'medium').toLowerCase()}`;
-
-        item.innerHTML = `
-          <div class="kanban-card-top">
-            <span class="kanban-project-tag">${escapeHtml(card.project || 'General')}</span>
-            <button type="button" class="action-btn del-btn" title="Delete card">${deleteSVG}</button>
-          </div>
-          <p class="kanban-card-title">${escapeHtml(card.title)}</p>
-          <div class="kanban-card-bottom">
-            <span class="slot-badge ${prioClass}">${card.priority || 'Medium'}</span>
-          </div>
-        `;
-
-        item.addEventListener('dragstart', (e) => {
-          item.classList.add('dragging');
-          e.dataTransfer.setData('text/plain', card.id);
-        });
-        item.addEventListener('dragend', () => {
-          item.classList.remove('dragging');
-        });
-
-        item.querySelector('.del-btn').addEventListener('click', () => {
-          kanbanCards = kanbanCards.filter(c => c.id !== card.id);
-          saveKanban(kanbanCards);
-          renderKanban();
-        });
-
-        listEl.appendChild(item);
-      });
-    });
-  };
-
-  // Setup Kanban Drag & Drop
-  document.querySelectorAll('.kanban-cards-list').forEach(list => {
+  document.querySelectorAll('.kanban-cards-list[data-column]').forEach((list) => {
     list.addEventListener('dragover', (e) => {
       e.preventDefault();
       list.classList.add('drag-over');
@@ -294,18 +319,35 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       list.classList.remove('drag-over');
       const cardId = e.dataTransfer.getData('text/plain');
-      const targetColumn = list.dataset.column;
-      const targetCard = kanbanCards.find(c => c.id === cardId);
+      const targetCard = kanbanCards.find((c) => c.id === cardId);
       if (targetCard) {
-        targetCard.column = targetColumn;
+        targetCard.column = list.dataset.column;
         saveKanban(kanbanCards);
-        renderKanban();
+        renderBoards();
       }
     });
   });
 
-  // Setup Column Add Card Buttons
-  document.querySelectorAll('.btn-add-card').forEach(btn => {
+  document.querySelectorAll('.matrix-list').forEach((list) => {
+    list.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      list.classList.add('drag-over');
+    });
+    list.addEventListener('dragleave', () => list.classList.remove('drag-over'));
+    list.addEventListener('drop', (e) => {
+      e.preventDefault();
+      list.classList.remove('drag-over');
+      const cardId = e.dataTransfer.getData('text/plain');
+      const targetCard = kanbanCards.find((c) => c.id === cardId);
+      if (targetCard) {
+        targetCard.eisenhower = list.dataset.quad;
+        saveKanban(kanbanCards);
+        renderBoards();
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-add-card').forEach((btn) => {
     btn.addEventListener('click', () => {
       targetKanbanColumn = btn.dataset.column;
       cardTitleInput.value = '';
@@ -314,47 +356,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Card Priority Pills
-  cardPriorityPills.querySelectorAll('.pill').forEach(pill => {
+  cardPriorityPills.querySelectorAll('.pill').forEach((pill) => {
     pill.addEventListener('click', () => {
-      cardPriorityPills.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+      cardPriorityPills.querySelectorAll('.pill').forEach((p) => p.classList.remove('selected'));
       pill.classList.add('selected');
       selectedCardPriority = pill.dataset.prio;
     });
   });
 
-  // Kanban Task Form Submit
+  cardQuadPills.querySelectorAll('.pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      cardQuadPills.querySelectorAll('.pill').forEach((p) => p.classList.remove('selected'));
+      pill.classList.add('selected');
+      selectedCardQuad = pill.dataset.quad;
+    });
+  });
+
   kanbanTaskForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const title = cardTitleInput.value.trim();
-    if (!title) return;
-
-    const newCard = {
+    const proj = activeProject();
+    if (!title || !proj) return;
+    kanbanCards.push({
       id: 'c-' + Date.now(),
       title,
       column: targetKanbanColumn,
-      project: cardProjectSelect.value || 'General',
-      priority: selectedCardPriority
-    };
-
-    kanbanCards.push(newCard);
+      project: proj.title,
+      projectId: proj.id,
+      priority: selectedCardPriority,
+      eisenhower: selectedCardQuad,
+      focusSeconds: 0
+    });
     saveKanban(kanbanCards);
     kanbanTaskModal.close();
-    renderKanban();
+    renderBoards();
   });
 
   closeCardModalBtn.addEventListener('click', () => kanbanTaskModal.close());
 
-  // Project Color Pills
-  projectColorPills.querySelectorAll('.pill').forEach(pill => {
+  projectColorPills.querySelectorAll('.pill').forEach((pill) => {
     pill.addEventListener('click', () => {
-      projectColorPills.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+      projectColorPills.querySelectorAll('.pill').forEach((p) => p.classList.remove('selected'));
       pill.classList.add('selected');
       selectedProjectColor = pill.dataset.color;
     });
   });
 
-  // New Project Form Submit
   openNewProjectModalBtn.addEventListener('click', () => {
     projectTitleInput.value = '';
     projectDescInput.value = '';
@@ -369,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const title = projectTitleInput.value.trim();
     if (!title) return;
-
     const newProj = {
       id: 'proj-' + Date.now(),
       title,
@@ -378,13 +424,14 @@ document.addEventListener('DOMContentLoaded', () => {
       color: selectedProjectColor,
       milestones: []
     };
-
     projects.push(newProj);
     saveProjects(projects);
     newProjectModal.close();
     renderProjectCards();
   });
 
-  // Initial renders
   renderProjectCards();
+  const params = new URLSearchParams(location.search);
+  const fromQuery = params.get('project');
+  if (fromQuery) openProject(fromQuery);
 });

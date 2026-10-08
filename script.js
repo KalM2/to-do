@@ -1,3 +1,4 @@
+(() => {
 // * DOM ELEMENTS
 const btnTime = document.getElementById('btnTime');
 const btnPriority = document.getElementById('btnPriority');
@@ -25,7 +26,7 @@ const escapeHtml = (text) => {
 };
 
 // ! STATE
-let activeView = 'time';
+let activeView = 'priority';
 let selectedTimePill = null;
 let selectedPriorityPill = null;
 
@@ -351,17 +352,16 @@ const saveTasks = () => {
 
 const loadTasks = () => {
     const raw = localStorage.getItem('simpleDay_tasks');
-    let taskData = null;
-    if (raw) {
+    let taskData = [];
+    if (raw !== null) {
+        SimpleDayDefaults.markInitialized('tasks');
         try {
             taskData = JSON.parse(raw);
         } catch (e) {
             console.error('Failed to parse saved tasks', e);
         }
-    }
-
-    // Seed helpful starter tasks on first launch
-    if (!taskData || !Array.isArray(taskData) || taskData.length === 0) {
+        if (!Array.isArray(taskData)) taskData = [];
+    } else if (SimpleDayDefaults.shouldSeed('tasks')) {
         taskData = [
             {
                 text: "Plan today's high-impact goals",
@@ -391,6 +391,8 @@ const loadTasks = () => {
                 subtasks: []
             }
         ];
+        localStorage.setItem('simpleDay_tasks', JSON.stringify(taskData));
+        SimpleDayDefaults.markInitialized('tasks');
     }
 
     // Clear lists
@@ -504,33 +506,10 @@ document.querySelectorAll('.task-list').forEach(list => {
     });
 });
 
-// ! USER PROFILE & GREETING
+// ! USER PROFILE & GREETING (name is display-only; edit it in the profile menu)
 const savedName = localStorage.getItem('simpleTracker_userName') || 'Kaleb';
 if (userNameEl) {
     userNameEl.textContent = savedName;
-    userNameEl.addEventListener('blur', () => {
-        const newName = userNameEl.textContent.trim() || 'Kaleb';
-        userNameEl.textContent = newName;
-        localStorage.setItem('simpleTracker_userName', newName);
-        try {
-            const raw = localStorage.getItem('simpleDay_profile');
-            const p = raw ? JSON.parse(raw) : { name: newName };
-            p.name = newName;
-            localStorage.setItem('simpleDay_profile', JSON.stringify(p));
-            const headerName = document.getElementById('headerProfileName');
-            const headerAvatar = document.getElementById('headerProfileAvatar');
-            if (headerName) headerName.textContent = newName;
-            if (headerAvatar && (!p.avatar || p.avatar.length === 1)) {
-                headerAvatar.textContent = newName.charAt(0).toUpperCase();
-            }
-        } catch (e) {}
-    });
-    userNameEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            userNameEl.blur();
-        }
-    });
 }
 
 const updateGreetingAndDate = () => {
@@ -549,3 +528,4 @@ updateGreetingAndDate();
 
 // Initialize on DOM load
 loadTasks();
+})();

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Focus - simple day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Tangerine:wght@400;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <script>
+    (function() {
+      var t = null;
+      try { t = localStorage.getItem("simpleDay_theme"); } catch(e) {}
+      document.documentElement.dataset.theme = t || "warm-cream";
+    })();
+  </script>
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <a href="../index.html" class="brand-link">
+          <span class="brand-symbol">✦</span>
+          <span class="brand-title">simple day</span>
+        </a>
+      </div>
+      <nav class="header-nav">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="./planner.html">Planner</a></li>
+          <li><a href="./calender.html">Calender</a></li>
+          <li><a href="./projects.html">Projects</a></li>
+          <li><a href="./focus.html" class="active">Focus</a></li>
+          <li><a href="./habits.html">Habits</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <button type="button" class="header-btn theme-toggle" aria-label="Choose color theme">
+          <svg class="palette-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1 .9-1.8 2-1.8H17a4 4 0 0 0 4-4c0-4.4-4-7.7-9-7.7Z"/>
+            <circle cx="7.5" cy="11" r="1.3" fill="var(--bg)"/>
+            <circle cx="10.5" cy="7" r="1.3" fill="var(--bg)"/>
+            <circle cx="15" cy="7.5" r="1.3" fill="var(--bg)"/>
+          </svg>
+          <span class="theme-toggle-label">Warm Cream</span>
+        </button>
+        <button type="button" class="header-btn profile-toggle" aria-label="Account profile">
+          <span class="profile-avatar-badge" id="headerProfileAvatar">K</span>
+          <span class="profile-toggle-name" id="headerProfileName">Kaleb</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div id="greetings">
+    <h1>Focus Timer</h1>
+    <p class="date-subtitle">Tie a session to a project and task. Time is saved on this laptop.</p>
+  </div>
+
+  <main class="focus-layout">
+    <section class="planner-card focus-select-card">
+      <p class="pill-label">Working on</p>
+      <label class="form-group">
+        <span>Project</span>
+        <select id="focusProjectSelect" class="app-select"></select>
+      </label>
+      <label class="form-group">
+        <span>Task</span>
+        <select id="focusTaskSelect" class="app-select"></select>
+      </label>
+      <p class="focus-target-summary" id="focusTargetSummary">Choose a project to start tracking.</p>
+    </section>
+
+    <section class="planner-card timer-widget focus-timer-card">
+      <p class="pill-label">Session</p>
+      <div class="timer-mode-buttons">
+        <button type="button" class="pill timer-mode active" data-time="1500">Focus</button>
+        <button type="button" class="pill timer-mode" data-time="300">Short Break</button>
+        <button type="button" class="pill timer-mode" data-time="900">Long Break</button>
+      </div>
+      <div class="timer-display" id="timerDisplay">25:00</div>
+      <div class="timer-controls">
+        <button type="button" id="timerStartBtn" class="pill pill-action">Start</button>
+        <button type="button" id="timerResetBtn" class="pill">Reset</button>
+      </div>
+      <div class="timer-sessions" id="timerSessions">
+        <span class="session-label">Focus sessions today:</span>
+        <span id="sessionCountText" class="session-count">0</span>
+      </div>
+    </section>
+
+    <section class="planner-card focus-log-card">
+      <p class="pill-label">Time tracked</p>
+      <div class="focus-totals" id="focusTotals"></div>
+      <div class="focus-log-list" id="focusLogList"></div>
+    </section>
+  </main>
+
+  <script src="../js/theme-profile.js"></script>
+  <script src="../js/db.js"></script>
+  <script src="../js/focus.js"></script>
+</body>
+
+</html>

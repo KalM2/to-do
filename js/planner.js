@@ -1,11 +1,12 @@
-// Planner Logic & Persistence
 document.addEventListener('DOMContentLoaded', () => {
-  // State
   let activeDate = new Date();
-  let selectedModalHour = null;
   let selectedSlotTag = 'Focus';
+  let editingBlockId = null;
+  let pickingPriorityIndex = null;
+  const HOUR_HEIGHT = 56;
+  const DAY_START = 6;
+  const DAY_END = 22;
 
-  // Format YYYY-MM-DD
   const getDateKey = (date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -15,7 +16,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const getStorageKey = (key) => `simpleDay_planner_${getDateKey(activeDate)}_${key}`;
 
-  // DOM Elements
+  const minutesFromTime = (time) => {
+    const [h, m] = (time || '09:00').split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+
+  const timeFromMinutes = (mins) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  };
+
+  const escapeHtml = (text) => {
+    const div = document.createElement('div');
+    div.textContent = text == null ? '' : String(text);
+    return div.innerHTML;
+  };
+
+  const escapeAttr = (text) => String(text || '').replace(/"/g, '&quot;');
+
   const currentPlannerDateEl = document.getElementById('currentPlannerDate');
   const prevDayBtn = document.getElementById('prevDayBtn');
   const nextDayBtn = document.getElementById('nextDayBtn');
@@ -26,22 +45,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const waterCountEl = document.getElementById('waterCount');
   const dailyNotesEl = document.getElementById('dailyNotes');
   const notesSaveStatusEl = document.getElementById('notesSaveStatus');
+  const expandJournalBtn = document.getElementById('expandJournalBtn');
+  const journalModal = document.getElementById('journalModal');
+  const dailyNotesModal = document.getElementById('dailyNotesModal');
+  const notesSaveStatusModal = document.getElementById('notesSaveStatusModal');
+  const journalToolbar = document.getElementById('journalToolbar');
+  const journalToolbarModal = document.getElementById('journalToolbarModal');
+  const closeJournalModalBtn = document.getElementById('closeJournalModalBtn');
 
-  // Modal elements
   const slotModal = document.getElementById('slotModal');
   const slotForm = document.getElementById('slotForm');
   const modalSlotTimeEl = document.getElementById('modalSlotTime');
   const slotTextInput = document.getElementById('slotTextInput');
+  const slotStartInput = document.getElementById('slotStartInput');
+  const slotEndInput = document.getElementById('slotEndInput');
   const slotTagsContainer = document.getElementById('slotTags');
   const modalClearBtn = document.getElementById('modalClearBtn');
   const modalCancelBtn = document.getElementById('modalCancelBtn');
+  const taskPickerModal = document.getElementById('taskPickerModal');
+  const taskPickerList = document.getElementById('taskPickerList');
+  const closeTaskPickerBtn = document.getElementById('closeTaskPickerBtn');
 
-  // 1. Date Header & Navigation
   const updateDateDisplay = () => {
     const options = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
     currentPlannerDateEl.textContent = activeDate.toLocaleDateString(undefined, options);
-
-    // Refresh all data for active date
     loadPriorities();
     loadSchedule();
     loadWater();
@@ -52,18 +79,23 @@ document.addEventListener('DOMContentLoaded', () => {
     activeDate.setDate(activeDate.getDate() - 1);
     updateDateDisplay();
   });
-
   nextDayBtn.addEventListener('click', () => {
     activeDate.setDate(activeDate.getDate() + 1);
     updateDateDisplay();
   });
-
   todayPlannerBtn.addEventListener('click', () => {
     activeDate = new Date();
     updateDateDisplay();
   });
 
-  // 2. Top 3 Priorities
+  const loadProjectTasks = () => {
+    let projects = [];
+    let cards = [];
+    try { projects = JSON.parse(localStorage.getItem('simpleDay_projects_data') || '[]'); } catch (e) {}
+    try { cards = JSON.parse(localStorage.getItem('simpleDay_kanban_cards') || '[]'); } catch (e) {}
+    return { projects, cards };
+  };
+
   const loadPriorities = () => {
     const raw = localStorage.getItem(getStorageKey('priorities'));
     let priorities = [];
@@ -82,12 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const savePriorities = () => {
     const items = [];
-    prioritiesListEl.querySelectorAll('.priority-item').forEach(item => {
+    prioritiesListEl.querySelectorAll('.priority-item').forEach((item) => {
       const cb = item.querySelector('.priority-cb');
       const input = item.querySelector('.priority-input');
       items.push({
-        text: input.value.trim(),
-        completed: cb.checked
+        text: input.value,
+        completed: cb.checked,
+        projectId: item.dataset.projectId || '',
+        taskId: item.dataset.taskId || ''
       });
     });
     localStorage.setItem(getStorageKey('priorities'), JSON.stringify(items));
@@ -98,107 +132,170 @@ document.addEventListener('DOMContentLoaded', () => {
     priorities.forEach((item, index) => {
       const div = document.createElement('div');
       div.className = 'priority-item' + (item.completed ? ' completed' : '');
+      div.dataset.projectId = item.projectId || '';
+      div.dataset.taskId = item.taskId || '';
       div.innerHTML = `
         <span class="priority-num">${index + 1}</span>
         <input type="checkbox" class="priority-cb" ${item.completed ? 'checked' : ''} aria-label="Mark priority ${index + 1} complete">
-        <input type="text" class="priority-input" placeholder="Primary goal #${index + 1} for today..." value="${item.text}">
+        <input type="text" class="priority-input" placeholder="Write a priority, or pick a project task..." value="${escapeAttr(item.text)}">
+        <button type="button" class="pill pick-task-btn" title="Choose from a project">From project</button>
       `;
-
       const cb = div.querySelector('.priority-cb');
       const input = div.querySelector('.priority-input');
-
       cb.addEventListener('change', () => {
         div.classList.toggle('completed', cb.checked);
         savePriorities();
       });
-
       input.addEventListener('input', () => {
+        div.dataset.taskId = '';
+        div.dataset.projectId = '';
         savePriorities();
       });
-
+      div.querySelector('.pick-task-btn').addEventListener('click', () => {
+        pickingPriorityIndex = index;
+        openTaskPicker();
+      });
       prioritiesListEl.appendChild(div);
     });
   };
 
-  // 3. Hourly Time Blocking Schedule (06:00 to 22:00)
-  const hours = [
-    { hour: 6, label: '06:00 AM' },
-    { hour: 7, label: '07:00 AM' },
-    { hour: 8, label: '08:00 AM' },
-    { hour: 9, label: '09:00 AM' },
-    { hour: 10, label: '10:00 AM' },
-    { hour: 11, label: '11:00 AM' },
-    { hour: 12, label: '12:00 PM' },
-    { hour: 13, label: '01:00 PM' },
-    { hour: 14, label: '02:00 PM' },
-    { hour: 15, label: '03:00 PM' },
-    { hour: 16, label: '04:00 PM' },
-    { hour: 17, label: '05:00 PM' },
-    { hour: 18, label: '06:00 PM' },
-    { hour: 19, label: '07:00 PM' },
-    { hour: 20, label: '08:00 PM' },
-    { hour: 21, label: '09:00 PM' },
-    { hour: 22, label: '10:00 PM' }
-  ];
-
-  const getScheduleData = () => {
-    const raw = localStorage.getItem(getStorageKey('schedule'));
-    if (!raw) return {};
-    try { return JSON.parse(raw); } catch (e) { return {}; }
+  const openTaskPicker = () => {
+    const { projects, cards } = loadProjectTasks();
+    taskPickerList.innerHTML = '';
+    if (!projects.length) {
+      taskPickerList.innerHTML = `<p class="empty-state">No projects yet. Create one on the Projects page.</p>`;
+      taskPickerModal.showModal();
+      return;
+    }
+    projects.forEach((proj) => {
+      const group = document.createElement('div');
+      group.className = 'task-picker-group';
+      const related = cards.filter((c) => (c.projectId === proj.id || c.project === proj.title) && c.column !== 'done');
+      group.innerHTML = `<h4>${escapeHtml(proj.title)}</h4>`;
+      if (!related.length) {
+        group.innerHTML += `<p class="empty-state">No open tasks</p>`;
+      } else {
+        related.forEach((card) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'task-picker-item';
+          btn.textContent = card.title;
+          btn.addEventListener('click', () => {
+            const rows = prioritiesListEl.querySelectorAll('.priority-item');
+            const row = rows[pickingPriorityIndex];
+            if (row) {
+              row.querySelector('.priority-input').value = card.title;
+              row.dataset.projectId = proj.id;
+              row.dataset.taskId = card.id;
+              savePriorities();
+            }
+            taskPickerModal.close();
+          });
+          group.appendChild(btn);
+        });
+      }
+      taskPickerList.appendChild(group);
+    });
+    taskPickerModal.showModal();
   };
 
-  const saveScheduleData = (data) => {
-    localStorage.setItem(getStorageKey('schedule'), JSON.stringify(data));
+  closeTaskPickerBtn.addEventListener('click', () => taskPickerModal.close());
+
+  const migrateSchedule = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    return Object.keys(raw).map((hour, idx) => {
+      const slot = raw[hour];
+      const start = Number(hour) * 60;
+      return {
+        id: 'legacy-' + idx,
+        text: slot.text,
+        tag: slot.tag || 'Focus',
+        start,
+        end: start + 60
+      };
+    });
+  };
+
+  const getBlocks = () => {
+    const raw = localStorage.getItem(getStorageKey('schedule'));
+    if (!raw) return [];
+    try { return migrateSchedule(JSON.parse(raw)); } catch (e) { return []; }
+  };
+
+  const saveBlocks = (blocks) => {
+    localStorage.setItem(getStorageKey('schedule'), JSON.stringify(blocks));
   };
 
   const loadSchedule = () => {
-    const data = getScheduleData();
-    scheduleContainerEl.innerHTML = '';
+    const blocks = getBlocks();
+    const grid = document.createElement('div');
+    grid.className = 'gcal-timed-grid gcal-day-grid planner-day-grid';
+    let hoursHtml = '<div class="gcal-hours">';
+    for (let h = DAY_START; h < DAY_END; h++) {
+      const label = h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+      hoursHtml += `<div class="gcal-hour-label" style="height:${HOUR_HEIGHT}px">${label}</div>`;
+    }
+    hoursHtml += '</div>';
+    grid.innerHTML = hoursHtml;
 
-    hours.forEach(({ hour, label }) => {
-      const slotData = data[hour] || null;
-      const row = document.createElement('div');
-      row.className = 'schedule-row';
-      row.dataset.hour = hour;
+    const col = document.createElement('div');
+    col.className = 'gcal-day-col';
+    col.style.minHeight = `${(DAY_END - DAY_START) * HOUR_HEIGHT}px`;
+    let lines = '';
+    for (let h = 0; h < (DAY_END - DAY_START); h++) {
+      lines += `<div class="gcal-hour-line" style="top:${h * HOUR_HEIGHT}px"></div>`;
+    }
+    col.innerHTML = lines;
 
-      const hasEvent = slotData && slotData.text;
-      const tagClass = hasEvent ? `tag-${slotData.tag.toLowerCase()}` : '';
-
-      row.innerHTML = `
-        <div class="schedule-time">${label}</div>
-        <div class="schedule-slot ${hasEvent ? 'has-event ' + tagClass : 'empty-slot'}">
-          ${hasEvent ? `
-            <span class="slot-text">${slotData.text}</span>
-            <span class="slot-badge">${slotData.tag}</span>
-          ` : `<span class="slot-placeholder">+ Add block</span>`}
-        </div>
-      `;
-
-      row.querySelector('.schedule-slot').addEventListener('click', () => {
-        openSlotModal(hour, label, slotData);
+    blocks.forEach((block) => {
+      const top = ((block.start - DAY_START * 60) / 60) * HOUR_HEIGHT;
+      const height = Math.max(22, ((block.end - block.start) / 60) * HOUR_HEIGHT);
+      const ev = document.createElement('button');
+      ev.type = 'button';
+      ev.className = `gcal-event tag-${(block.tag || 'focus').toLowerCase()}`;
+      ev.style.cssText = `top:${top}px;height:${height}px;`;
+      ev.innerHTML = `<strong>${escapeHtml(block.text)}</strong><span>${timeFromMinutes(block.start)} – ${timeFromMinutes(block.end)}</span>`;
+      ev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openSlotModal(block);
       });
-
-      scheduleContainerEl.appendChild(row);
+      col.appendChild(ev);
     });
+
+    col.addEventListener('click', (e) => {
+      const mins = DAY_START * 60 + Math.round((e.offsetY / HOUR_HEIGHT) * 60 / 15) * 15;
+      openSlotModal({
+        id: null,
+        text: '',
+        tag: 'Focus',
+        start: mins,
+        end: mins + 45
+      });
+    });
+
+    grid.appendChild(col);
+    scheduleContainerEl.innerHTML = '';
+    scheduleContainerEl.appendChild(grid);
   };
 
-  const openSlotModal = (hour, label, currentData) => {
-    selectedModalHour = hour;
-    modalSlotTimeEl.textContent = `Schedule: ${label}`;
-    slotTextInput.value = currentData?.text || '';
-    selectedSlotTag = currentData?.tag || 'Focus';
-
-    slotTagsContainer.querySelectorAll('.pill').forEach(pill => {
+  const openSlotModal = (block) => {
+    editingBlockId = block.id;
+    modalSlotTimeEl.textContent = block.id ? 'Edit block' : 'New time block';
+    slotTextInput.value = block.text || '';
+    slotStartInput.value = timeFromMinutes(block.start);
+    slotEndInput.value = timeFromMinutes(block.end);
+    selectedSlotTag = block.tag || 'Focus';
+    slotTagsContainer.querySelectorAll('.pill').forEach((pill) => {
       pill.classList.toggle('selected', pill.dataset.tag === selectedSlotTag);
     });
-
     slotModal.showModal();
     slotTextInput.focus();
   };
 
-  slotTagsContainer.querySelectorAll('.pill').forEach(pill => {
+  slotTagsContainer.querySelectorAll('.pill').forEach((pill) => {
     pill.addEventListener('click', () => {
-      slotTagsContainer.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+      slotTagsContainer.querySelectorAll('.pill').forEach((p) => p.classList.remove('selected'));
       pill.classList.add('selected');
       selectedSlotTag = pill.dataset.tag;
     });
@@ -207,45 +304,57 @@ document.addEventListener('DOMContentLoaded', () => {
   slotForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const text = slotTextInput.value.trim();
-    if (!text || selectedModalHour === null) return;
-
-    const data = getScheduleData();
-    data[selectedModalHour] = { text, tag: selectedSlotTag };
-    saveScheduleData(data);
+    if (!text) return;
+    const start = minutesFromTime(slotStartInput.value);
+    let end = minutesFromTime(slotEndInput.value);
+    if (end <= start) end = start + 30;
+    const blocks = getBlocks();
+    if (editingBlockId) {
+      const existing = blocks.find((b) => b.id === editingBlockId);
+      if (existing) {
+        existing.text = text;
+        existing.tag = selectedSlotTag;
+        existing.start = start;
+        existing.end = end;
+      }
+    } else {
+      blocks.push({
+        id: 'blk-' + Date.now(),
+        text,
+        tag: selectedSlotTag,
+        start,
+        end
+      });
+    }
+    saveBlocks(blocks);
     slotModal.close();
     loadSchedule();
   });
 
   modalClearBtn.addEventListener('click', () => {
-    if (selectedModalHour === null) return;
-    const data = getScheduleData();
-    delete data[selectedModalHour];
-    saveScheduleData(data);
+    if (editingBlockId) {
+      saveBlocks(getBlocks().filter((b) => b.id !== editingBlockId));
+    }
     slotModal.close();
     loadSchedule();
   });
 
-  modalCancelBtn.addEventListener('click', () => {
-    slotModal.close();
-  });
+  modalCancelBtn.addEventListener('click', () => slotModal.close());
 
-  // 4. Hydration Tracker
   const loadWater = () => {
-    const raw = localStorage.getItem(getStorageKey('water'));
-    const count = parseInt(raw, 10) || 0;
+    const count = parseInt(localStorage.getItem(getStorageKey('water')), 10) || 0;
     renderWater(count);
   };
 
   const renderWater = (count) => {
     waterTrackerEl.innerHTML = '';
     waterCountEl.textContent = count;
-
     for (let i = 1; i <= 8; i++) {
       const glass = document.createElement('button');
       glass.type = 'button';
       glass.className = 'water-glass' + (i <= count ? ' filled' : '');
       glass.title = `Glass ${i}`;
-      glass.innerHTML = `💧`;
+      glass.textContent = '💧';
       glass.addEventListener('click', () => {
         const newCount = (i === count) ? i - 1 : i;
         localStorage.setItem(getStorageKey('water'), newCount);
@@ -255,137 +364,77 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // 5. Daily Notes / Scratchpad
   let notesTimeout = null;
-  const loadNotes = () => {
-    const notes = localStorage.getItem(getStorageKey('notes')) || '';
-    dailyNotesEl.value = notes;
-    notesSaveStatusEl.textContent = 'Saved';
+  const setNotesStatus = (text) => {
+    notesSaveStatusEl.textContent = text;
+    if (notesSaveStatusModal) notesSaveStatusModal.textContent = text;
   };
 
-  dailyNotesEl.addEventListener('input', () => {
-    notesSaveStatusEl.textContent = 'Saving...';
-    clearTimeout(notesTimeout);
-    notesTimeout = setTimeout(() => {
-      localStorage.setItem(getStorageKey('notes'), dailyNotesEl.value);
-      notesSaveStatusEl.textContent = 'Saved';
-    }, 400);
-  });
-
-  // 6. Pomodoro Focus Timer
-  let timerDuration = 1500; // 25 min default
-  let timerRemaining = 1500;
-  let timerInterval = null;
-  let isTimerRunning = false;
-
-  const timerDisplayEl = document.getElementById('timerDisplay');
-  const timerStartBtn = document.getElementById('timerStartBtn');
-  const timerResetBtn = document.getElementById('timerResetBtn');
-  const timerModeBtns = document.querySelectorAll('.timer-mode');
-  const sessionCountText = document.getElementById('sessionCountText');
-
-  const getSessionsKey = () => `simpleDay_planner_${getDateKey(new Date())}_sessions`;
-
-  const updateSessionsDisplay = () => {
-    const sessions = parseInt(localStorage.getItem(getSessionsKey()), 10) || 0;
-    sessionCountText.textContent = sessions;
-  };
-  updateSessionsDisplay();
-
-  const formatTimer = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  };
-
-  const updateTimerDisplay = () => {
-    timerDisplayEl.textContent = formatTimer(timerRemaining);
-  };
-
-  const playChime = () => {
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); // A5
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.8);
-    } catch (e) {
-      console.log('Audio chime not supported');
+  const loadNotes = async () => {
+    const key = getDateKey(activeDate);
+    let html = '';
+    if (window.SimpleDayDB) {
+      const rec = await SimpleDayDB.getJournal(key);
+      html = rec?.html || '';
     }
+    if (!html) html = localStorage.getItem(getStorageKey('notes')) || '';
+    dailyNotesEl.innerHTML = html;
+    if (dailyNotesModal) dailyNotesModal.innerHTML = html;
+    setNotesStatus('Saved locally');
   };
 
-  timerModeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      timerModeBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      timerDuration = parseInt(btn.dataset.time, 10);
-      pauseTimer();
-      timerRemaining = timerDuration;
-      updateTimerDisplay();
+  const persistNotes = async (html) => {
+    const key = getDateKey(activeDate);
+    localStorage.setItem(getStorageKey('notes'), html);
+    if (window.SimpleDayDB) await SimpleDayDB.saveJournal(key, html);
+    setNotesStatus('Saved locally');
+  };
+
+  const bindEditor = (editor) => {
+    editor.addEventListener('input', () => {
+      setNotesStatus('Saving...');
+      const html = editor.innerHTML;
+      if (editor !== dailyNotesEl) dailyNotesEl.innerHTML = html;
+      if (dailyNotesModal && editor !== dailyNotesModal) dailyNotesModal.innerHTML = html;
+      clearTimeout(notesTimeout);
+      notesTimeout = setTimeout(() => persistNotes(html), 400);
     });
-  });
-
-  const startTimer = () => {
-    if (isTimerRunning) return;
-    isTimerRunning = true;
-    timerStartBtn.textContent = 'Pause';
-    timerStartBtn.classList.add('running');
-
-    timerInterval = setInterval(() => {
-      timerRemaining--;
-      updateTimerDisplay();
-
-      if (timerRemaining <= 0) {
-        clearInterval(timerInterval);
-        isTimerRunning = false;
-        timerStartBtn.textContent = 'Start';
-        timerStartBtn.classList.remove('running');
-        playChime();
-
-        // Increment sessions count if in focus mode (1500s)
-        if (timerDuration === 1500) {
-          const sessions = (parseInt(localStorage.getItem(getSessionsKey()), 10) || 0) + 1;
-          localStorage.setItem(getSessionsKey(), sessions);
-          updateSessionsDisplay();
-        }
-
-        timerRemaining = timerDuration;
-        updateTimerDisplay();
-        alert('Timer completed! Take a breath or switch to break mode.');
+    editor.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        document.execCommand('insertText', false, '  ');
       }
-    }, 1000);
+    });
   };
 
-  const pauseTimer = () => {
-    if (!isTimerRunning) return;
-    isTimerRunning = false;
-    clearInterval(timerInterval);
-    timerStartBtn.textContent = 'Start';
-    timerStartBtn.classList.remove('running');
+  bindEditor(dailyNotesEl);
+  if (dailyNotesModal) bindEditor(dailyNotesModal);
+
+  const wireToolbar = (toolbar) => {
+    if (!toolbar) return;
+    toolbar.querySelectorAll('button[data-cmd]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        const value = btn.dataset.value || null;
+        const target = journalModal.open ? dailyNotesModal : dailyNotesEl;
+        target.focus();
+        if (cmd === 'formatBlock') document.execCommand('formatBlock', false, value);
+        else document.execCommand(cmd, false, value);
+        target.dispatchEvent(new Event('input'));
+      });
+    });
   };
 
-  timerStartBtn.addEventListener('click', () => {
-    if (isTimerRunning) {
-      pauseTimer();
-    } else {
-      startTimer();
-    }
-  });
+  journalToolbarModal.innerHTML = journalToolbar.innerHTML;
+  wireToolbar(journalToolbar);
+  wireToolbar(journalToolbarModal);
 
-  timerResetBtn.addEventListener('click', () => {
-    pauseTimer();
-    timerRemaining = timerDuration;
-    updateTimerDisplay();
+  expandJournalBtn.addEventListener('click', () => {
+    dailyNotesModal.innerHTML = dailyNotesEl.innerHTML;
+    journalModal.showModal();
+    dailyNotesModal.focus();
   });
+  closeJournalModalBtn.addEventListener('click', () => journalModal.close());
 
-  // Initial render
   updateDateDisplay();
-  updateTimerDisplay();
 });

@@ -35,6 +35,7 @@
           <li><a href="./planner.html" class="active">Planner</a></li>
           <li><a href="./calender.html">Calender</a></li>
           <li><a href="./projects.html">Projects</a></li>
+          <li><a href="./focus.html">Focus</a></li>
           <li><a href="./habits.html">Habits</a></li>
         </ul>
       </nav>
@@ -67,73 +68,61 @@
   </div>
 
   <main class="planner-layout">
-    <!-- Left column: Top Priorities & Time Blocking Schedule -->
     <div class="planner-main-content">
-      <!-- Top 3 Priorities -->
       <section class="section-wrapper planner-card">
         <h2>Top 3 Priorities</h2>
-        <div class="priorities-list" id="prioritiesList">
-          <!-- Injected via JS -->
-        </div>
+        <div class="priorities-list" id="prioritiesList"></div>
       </section>
 
-      <!-- Hourly Time Blocking -->
       <section class="section-wrapper planner-card">
-        <h2>Hourly Schedule</h2>
-        <div class="time-block-schedule" id="scheduleContainer">
-          <!-- Hourly rows 6 AM - 10 PM injected via JS -->
+        <div class="section-heading-row">
+          <h2>Daily schedule</h2>
+          <a class="pill" href="./focus.html">Open Focus timer</a>
         </div>
+        <div class="gcal-scroll planner-day-scroll" id="scheduleContainer"></div>
       </section>
     </div>
 
     <div class="vertical-divider"></div>
 
-    <!-- Right column: Focus Timer, Wellness, Reflections -->
     <aside class="planner-sidebar">
-      <!-- Pomodoro Focus Timer -->
-      <div class="planner-card timer-widget">
-        <p class="pill-label">Focus Timer</p>
-        <div class="timer-mode-buttons">
-          <button type="button" class="pill timer-mode active" data-time="1500">Focus</button>
-          <button type="button" class="pill timer-mode" data-time="300">Short Break</button>
-          <button type="button" class="pill timer-mode" data-time="900">Long Break</button>
-        </div>
-        <div class="timer-display" id="timerDisplay">25:00</div>
-        <div class="timer-controls">
-          <button type="button" id="timerStartBtn" class="pill pill-action">Start</button>
-          <button type="button" id="timerResetBtn" class="pill">Reset</button>
-        </div>
-        <div class="timer-sessions" id="timerSessions">
-          <span class="session-label">Sessions completed today:</span>
-          <span id="sessionCountText" class="session-count">0</span>
-        </div>
-      </div>
-
-      <!-- Water & Energy Tracker -->
       <div class="planner-card wellness-widget">
         <p class="pill-label">Daily Hydration</p>
-        <div class="water-tracker" id="waterTracker">
-          <!-- 8 water glasses injected via JS -->
-        </div>
+        <div class="water-tracker" id="waterTracker"></div>
         <p class="water-caption"><span id="waterCount">0</span> of 8 glasses logged</p>
       </div>
 
-      <!-- Daily Reflection / Scratchpad -->
-      <div class="planner-card notes-widget">
-        <p class="pill-label">Daily Notes & Reflection</p>
-        <textarea id="dailyNotes" class="planner-textarea" placeholder="Jot down notes, thoughts, and reflections for today..."></textarea>
-        <span class="notes-status" id="notesSaveStatus">Saved</span>
+      <div class="planner-card notes-widget journal-widget">
+        <div class="section-heading-row">
+          <p class="pill-label">Daily Notes &amp; Reflection</p>
+          <button type="button" id="expandJournalBtn" class="pill">Expand</button>
+        </div>
+        <div class="journal-toolbar" id="journalToolbar">
+          <button type="button" data-cmd="formatBlock" data-value="H1" title="Heading 1">H1</button>
+          <button type="button" data-cmd="formatBlock" data-value="H2" title="Heading 2">H2</button>
+          <button type="button" data-cmd="formatBlock" data-value="H3" title="Heading 3">H3</button>
+          <button type="button" data-cmd="bold" title="Bold"><strong>B</strong></button>
+          <button type="button" data-cmd="italic" title="Italic"><em>I</em></button>
+          <button type="button" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
+          <button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+          <button type="button" data-cmd="formatBlock" data-value="BLOCKQUOTE" title="Quote">Quote</button>
+        </div>
+        <div id="dailyNotes" class="journal-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write today's journal... # headings, bullets, and numbered lists all work."></div>
+        <span class="notes-status" id="notesSaveStatus">Saved locally</span>
       </div>
     </aside>
   </main>
 
-  <!-- Hourly Slot Edit Dialog -->
   <dialog id="slotModal" class="app-modal">
     <form method="dialog" id="slotForm">
       <h3 id="modalSlotTime">Schedule Event</h3>
       <div class="form-group">
         <label for="slotTextInput">Event or Focus Block</label>
         <input type="text" id="slotTextInput" placeholder="e.g. Deep Work, Team Sync, Lunch" required />
+      </div>
+      <div class="form-group event-time-row">
+        <label class="inline-time-label">Start <input type="time" id="slotStartInput" /></label>
+        <label class="inline-time-label">End <input type="time" id="slotEndInput" /></label>
       </div>
       <div class="form-group">
         <label>Category Tag</label>
@@ -153,7 +142,28 @@
     </form>
   </dialog>
 
+  <dialog id="taskPickerModal" class="app-modal">
+    <form method="dialog">
+      <h3>Choose a project task</h3>
+      <div id="taskPickerList" class="task-picker-list"></div>
+      <div class="modal-actions">
+        <button type="button" id="closeTaskPickerBtn" class="btn-secondary">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="journalModal" class="app-modal journal-modal">
+    <div class="journal-modal-head">
+      <h3>Daily journal</h3>
+      <button type="button" id="closeJournalModalBtn" class="theme-picker-close" aria-label="Close journal">✕</button>
+    </div>
+    <div class="journal-toolbar" id="journalToolbarModal"></div>
+    <div id="dailyNotesModal" class="journal-editor journal-editor-large" contenteditable="true"></div>
+    <span class="notes-status" id="notesSaveStatusModal">Saved locally</span>
+  </dialog>
+
   <script src="../js/theme-profile.js"></script>
+  <script src="../js/db.js"></script>
   <script src="../js/planner.js"></script>
 </body>
 

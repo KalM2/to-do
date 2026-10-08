@@ -1,5 +1,14 @@
 // Theme Engine & Account Profile Management for simple day
 
+window.SimpleDayDefaults = {
+  shouldSeed(key) {
+    return localStorage.getItem(`simpleDay_defaults_initialized_${key}`) !== 'true';
+  },
+  markInitialized(key) {
+    localStorage.setItem(`simpleDay_defaults_initialized_${key}`, 'true');
+  }
+};
+
 // Available themes inspired by Omarchy and popular aesthetic palettes
 const siteThemes = [
   { id: 'warm-cream', name: 'Warm Cream', bg: '#ffe0b5', panel: '#ffffff', accent: '#f6511d', dark: false },
@@ -296,6 +305,7 @@ const initProfileEngine = () => {
                 📤 Import Backup
                 <input type="file" id="importDataFile" accept=".json" style="display:none;" />
               </label>
+              <button type="button" id="btnClearData" class="btn-secondary btn-danger">Clear all data</button>
               <button type="button" id="btnResetData" class="btn-secondary btn-danger">⚠️ Reset Defaults</button>
             </div>
           </div>
@@ -484,21 +494,79 @@ const initProfileEngine = () => {
     });
   }
 
+  const clearStoredData = async () => {
+    if (window.SimpleDayDB) await window.SimpleDayDB.clearAll();
+
+    const keysToRemove = [];
+    for (let index = 0; index < localStorage.length; index++) {
+      const key = localStorage.key(index);
+      if (key && !key.startsWith('simpleDay_defaults_initialized_')) keysToRemove.push(key);
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  };
+
+  const btnClearData = document.getElementById('btnClearData');
+  if (btnClearData) {
+    btnClearData.addEventListener('click', async () => {
+      if (!confirm('Clear all saved data? This cannot be undone. Defaults will not be restored.')) return;
+      try {
+        await clearStoredData();
+        alert('All saved data cleared. Reloading...');
+        window.location.reload();
+      } catch (error) {
+        alert('Could not clear all data: ' + error.message);
+      }
+    });
+  }
+
   // Reset to Defaults
   const btnResetData = document.getElementById('btnResetData');
   if (btnResetData) {
-    btnResetData.addEventListener('click', () => {
-      if (confirm('Are you sure you want to reset all data and start fresh? This cannot be undone.')) {
-        localStorage.clear();
-        alert('All data reset. Reloading...');
-        window.location.reload();
+    btnResetData.addEventListener('click', async () => {
+      if (confirm('Replace all saved data with the starter defaults? This cannot be undone.')) {
+        try {
+          if (window.SimpleDayDB) await window.SimpleDayDB.clearAll();
+          localStorage.clear();
+          alert('Defaults restored. Reloading...');
+          window.location.reload();
+        } catch (error) {
+          alert('Could not reset data: ' + error.message);
+        }
       }
     });
   }
 };
 
-// Initialize both on DOM ready
+const initMobileNav = () => {
+  const headerInner = document.querySelector('.header-inner');
+  const nav = document.querySelector('.header-nav');
+  if (!headerInner || !nav || document.querySelector('.nav-menu-toggle')) return;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'nav-menu-toggle header-btn';
+  btn.setAttribute('aria-label', 'Open menu');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.textContent = 'Menu';
+  headerInner.insertBefore(btn, nav);
+
+  btn.addEventListener('click', () => {
+    const open = document.body.classList.toggle('nav-open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? 'Close' : 'Menu';
+  });
+
+  nav.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      document.body.classList.remove('nav-open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.textContent = 'Menu';
+    });
+  });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   initThemeEngine();
   initProfileEngine();
+  initMobileNav();
 });
