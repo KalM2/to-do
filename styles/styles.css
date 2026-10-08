@@ -1671,6 +1671,46 @@ input[type="checkbox"]:checked::after {
   gap: 22px;
 }
 
+.google-calendar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.google-calendar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  cursor: pointer;
+}
+
+.google-calendar-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.google-calendar-swatch {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 3px;
+  background: var(--brand-navy);
+}
+
+.google-calendar-name {
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+}
+
+.calendar-list-message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .agenda-date-title {
   font-size: 1.15rem;
   color: var(--brand-navy);
@@ -2391,6 +2431,11 @@ input[type="checkbox"]:checked::after {
 .gcal-event.tag-wellness,
 .gcal-event.tag-break { background: #2a9d8f; }
 .gcal-event.tag-routine { background: #6c5ce7; }
+
+.google-calendar-colored {
+  background-color: var(--google-calendar-background) !important;
+  color: var(--google-calendar-foreground, #1b1b1b) !important;
+}
 
 .inline-time-label {
   display: flex;

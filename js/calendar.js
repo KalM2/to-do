@@ -1,6 +1,8 @@
 // Google-style calendar with month/week/day views, ICS import, and optional Google sync
 document.addEventListener('DOMContentLoaded', () => {
   const GOOGLE_CLIENT_ID = '111319810217-66p8c9esisfv5k0lvdcj4j332onllj15.apps.googleusercontent.com';
+  const GOOGLE_CALENDARS_KEY = 'simpleDay_google_calendars';
+  const GOOGLE_VISIBILITY_KEY = 'simpleDay_google_calendar_visibility';
   const deleteSVG = `<svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>`;
   const HOUR_HEIGHT = 56;
   const DAY_START = 0;
@@ -51,8 +53,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let displayedMonth = currentDate.getMonth();
   let selectedDate = new Date();
   selectedDate.setHours(0, 0, 0, 0);
-  let selectedCategory = 'Work';
   let calendarView = 'week';
+  let googleCalendars = [];
+  let calendarVisibility = {};
+  try {
+    googleCalendars = JSON.parse(localStorage.getItem(GOOGLE_CALENDARS_KEY) || '[]');
+    calendarVisibility = JSON.parse(localStorage.getItem(GOOGLE_VISIBILITY_KEY) || '{}');
+  } catch (e) {
+    googleCalendars = [];
+    calendarVisibility = {};
+  }
 
   const currentMonthYearEl = document.getElementById('currentMonthYear');
   const prevRangeBtn = document.getElementById('prevRangeBtn');
@@ -64,9 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const eventTitleInput = document.getElementById('eventTitleInput');
   const eventTimeInput = document.getElementById('eventTimeInput');
   const eventEndTimeInput = document.getElementById('eventEndTimeInput');
-  const eventCategoryPills = document.getElementById('eventCategoryPills');
   const dayEventsList = document.getElementById('dayEventsList');
   const upcomingEventsList = document.getElementById('upcomingEventsList');
+  const googleCalendarsList = document.getElementById('googleCalendarsList');
+  const googleCalendarsMessage = document.getElementById('googleCalendarsMessage');
   const monthView = document.getElementById('monthView');
   const weekView = document.getElementById('weekView');
   const dayView = document.getElementById('dayView');
@@ -99,10 +110,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 4);
     const defaultEvents = [
-      { id: 'ev-1', title: 'Product Architecture Review', date: todayStr, time: '10:00', endTime: '11:00', category: 'Work' },
-      { id: 'ev-2', title: 'Coffee & Strategy Chat', date: todayStr, time: '14:30', endTime: '15:15', category: 'Personal' },
-      { id: 'ev-3', title: 'Quarterly Planning Sprint', date: toDateKey(tomorrow), time: '09:00', endTime: '10:30', category: 'Urgent' },
-      { id: 'ev-4', title: 'Weekly Wellness & Reset', date: toDateKey(nextWeek), time: '17:00', endTime: '18:00', category: 'Wellness' }
+      { id: 'ev-1', title: 'Product Architecture Review', date: todayStr, time: '10:00', endTime: '11:00', category: 'Local' },
+      { id: 'ev-2', title: 'Coffee & Strategy Chat', date: todayStr, time: '14:30', endTime: '15:15', category: 'Local' },
+      { id: 'ev-3', title: 'Quarterly Planning Sprint', date: toDateKey(tomorrow), time: '09:00', endTime: '10:30', category: 'Local' },
+      { id: 'ev-4', title: 'Weekly Wellness & Reset', date: toDateKey(nextWeek), time: '17:00', endTime: '18:00', category: 'Local' }
     ];
     localStorage.setItem('simpleDay_calendar_events', JSON.stringify(defaultEvents));
     SimpleDayDefaults.markInitialized('calendar_events');
@@ -119,19 +130,63 @@ document.addEventListener('DOMContentLoaded', () => {
     if (syncStatusEl) syncStatusEl.textContent = msg || '';
   };
 
-  const eventsForDate = (key) => {
-    return events
-      .filter((e) => e.date === key)
-      .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  const calendarForEvent = (event) => googleCalendars.find((calendar) => calendar.id === event.calendarId);
+  const isCalendarVisible = (event) => !event.calendarId || calendarVisibility[event.calendarId] !== false;
+  const eventCalendarName = (event) => event.calendarName || calendarForEvent(event)?.summary || event.category || 'Local';
+  const eventColorClass = (event) => event.calendarId ? 'google-calendar-colored' : `tag-${(event.category || 'local').toLowerCase()}`;
+  const eventColorStyle = (event) => {
+    if (!event.calendarId) return '';
+    const calendar = calendarForEvent(event);
+    const background = event.calendarColor || calendar?.backgroundColor;
+    const foreground = event.calendarForegroundColor || calendar?.foregroundColor;
+    const styles = [];
+    if (/^#[0-9a-f]{6}$/i.test(background || '')) styles.push(`--google-calendar-background:${background}`);
+    if (/^#[0-9a-f]{6}$/i.test(foreground || '')) styles.push(`--google-calendar-foreground:${foreground}`);
+    return styles.join(';');
   };
 
-  eventCategoryPills.querySelectorAll('.pill').forEach((pill) => {
-    pill.addEventListener('click', () => {
-      eventCategoryPills.querySelectorAll('.pill').forEach((p) => p.classList.remove('selected'));
-      pill.classList.add('selected');
-      selectedCategory = pill.dataset.cat;
+  const saveCalendarVisibility = () => {
+    localStorage.setItem(GOOGLE_VISIBILITY_KEY, JSON.stringify(calendarVisibility));
+  };
+
+  const renderGoogleCalendars = () => {
+    googleCalendarsList.innerHTML = '';
+    if (googleCalendars.length === 0) {
+      googleCalendarsMessage.textContent = 'Connect Google Calendar to load your calendars.';
+      return;
+    }
+    googleCalendarsMessage.textContent = '';
+    googleCalendars.forEach((calendar) => {
+      const label = document.createElement('label');
+      label.className = 'google-calendar-toggle';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = calendarVisibility[calendar.id] !== false;
+      checkbox.setAttribute('aria-label', `Show ${calendar.summary}`);
+      checkbox.addEventListener('change', () => {
+        calendarVisibility[calendar.id] = checkbox.checked;
+        saveCalendarVisibility();
+        renderCalendar();
+      });
+      const swatch = document.createElement('span');
+      swatch.className = 'google-calendar-swatch';
+      if (/^#[0-9a-f]{6}$/i.test(calendar.backgroundColor || '')) {
+        swatch.style.backgroundColor = calendar.backgroundColor;
+      }
+      const name = document.createElement('span');
+      name.className = 'google-calendar-name';
+      name.textContent = calendar.summary || calendar.id;
+      label.append(checkbox, swatch, name);
+      googleCalendarsList.appendChild(label);
     });
-  });
+  };
+  renderGoogleCalendars();
+
+  const eventsForDate = (key) => {
+    return events
+      .filter((e) => e.date === key && isCalendarVisible(e))
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  };
 
   document.querySelectorAll('#calendarViewToggle .btn-toggle').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -178,8 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
     eventsForDate(key).forEach((ev) => {
       const block = document.createElement('button');
       block.type = 'button';
-      block.className = `gcal-event tag-${(ev.category || 'work').toLowerCase()}`;
-      block.style.cssText = eventBlockStyle(ev);
+      block.className = `gcal-event ${eventColorClass(ev)}`;
+      block.style.cssText = `${eventBlockStyle(ev)}${eventColorStyle(ev)}`;
       block.title = `${ev.time}–${ev.endTime} ${ev.title}`;
       block.innerHTML = `<strong>${escapeHtml(ev.title)}</strong><span>${escapeHtml(ev.time || '')} – ${escapeHtml(ev.endTime || '')}</span>`;
       block.addEventListener('click', (e) => {
@@ -279,7 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const dayEvs = eventsForDate(cellDateKey);
       let eventsHtml = '';
       dayEvs.slice(0, 3).forEach((ev) => {
-        eventsHtml += `<div class="event-mini-pill tag-${(ev.category || 'work').toLowerCase()}" title="${ev.time} - ${escapeHtml(ev.title)}">${escapeHtml(ev.title)}</div>`;
+        const colorStyle = eventColorStyle(ev);
+        eventsHtml += `<div class="event-mini-pill ${eventColorClass(ev)}"${colorStyle ? ` style="${colorStyle}"` : ''} title="${ev.time} - ${escapeHtml(ev.title)}">${escapeHtml(ev.title)}</div>`;
       });
       if (dayEvs.length > 3) eventsHtml += `<div class="event-more-indicator">+${dayEvs.length - 3} more</div>`;
       cell.innerHTML = `<span class="day-num">${i}</span><div class="day-cell-events">${eventsHtml}</div>`;
@@ -316,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="event-card-left">
           <span class="event-time-badge">${ev.time || 'All Day'}–${ev.endTime || ''}</span>
           <span class="event-title-text">${escapeHtml(ev.title)}</span>
-          <span class="event-category-badge tag-${(ev.category || 'work').toLowerCase()}">${escapeHtml(ev.category || '')}</span>
+          <span class="event-category-badge ${eventColorClass(ev)}"${eventColorStyle(ev) ? ` style="${eventColorStyle(ev)}"` : ''}>${escapeHtml(eventCalendarName(ev))}</span>
         </div>
         <button type="button" class="action-btn del-btn" title="Delete Event">${deleteSVG}</button>
       `;
@@ -331,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const renderUpcomingEvents = () => {
     const todayKey = toDateKey(new Date());
-    const upcoming = events.filter((e) => e.date >= todayKey)
+    const upcoming = events.filter((e) => e.date >= todayKey && isCalendarVisible(e))
       .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
     upcomingEventsList.innerHTML = '';
     if (upcoming.length === 0) {
@@ -348,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="upcoming-info-col">
           <span class="upcoming-title">${escapeHtml(ev.title)}</span>
-          <span class="slot-badge tag-${(ev.category || 'work').toLowerCase()}">${escapeHtml(ev.category || '')}</span>
+          <span class="slot-badge ${eventColorClass(ev)}"${eventColorStyle(ev) ? ` style="${eventColorStyle(ev)}"` : ''}>${escapeHtml(eventCalendarName(ev))}</span>
         </div>
       `;
       upcomingEventsList.appendChild(item);
@@ -382,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
       date: toDateKey(selectedDate),
       time: eventTimeInput.value || '09:00',
       endTime: eventEndTimeInput.value || addMinutesToTime(eventTimeInput.value || '09:00', 60),
-      category: selectedCategory,
+      category: 'Local',
       source: 'local'
     });
     saveEvents(events);
@@ -464,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
         date: start.date,
         time: start.time,
         endTime: end ? end.time : addMinutesToTime(start.time, 60),
-        category: 'Work',
+        category: 'Local',
         source: 'ics',
         uid
       });
@@ -484,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCalendar();
   });
 
-  const mergeGoogleEvents = (items) => {
+  const mergeGoogleEvents = (items, calendar) => {
     let added = 0;
     let updated = 0;
     items.forEach((item) => {
@@ -498,21 +554,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const end = item.end?.dateTime
         ? { date: toDateKey(new Date(item.end.dateTime)), time: timeFromMinutes(new Date(item.end.dateTime).getHours() * 60 + new Date(item.end.dateTime).getMinutes()) }
         : { date: start.date, time: addMinutesToTime(start.time, 60) };
-      const existing = events.find((e) => e.googleId === item.id);
+      const existing = events.find((e) => e.googleId === item.id && e.calendarId === calendar.id);
       const payload = {
         title: item.summary || '(No title)',
         date: start.date,
         time: start.time,
         endTime: end.date === start.date ? end.time : addMinutesToTime(start.time, 60),
-        category: 'Work',
+        category: 'Google Calendar',
         source: 'google',
-        googleId: item.id
+        googleId: item.id,
+        calendarId: calendar.id,
+        calendarName: calendar.summary,
+        calendarColor: calendar.backgroundColor,
+        calendarForegroundColor: calendar.foregroundColor
       };
       if (existing) {
         Object.assign(existing, payload);
         updated += 1;
       } else {
-        events.push({ id: 'gcal-' + item.id, ...payload });
+        events.push({ id: `gcal-${calendar.id}-${item.id}`, ...payload });
         added += 1;
       }
     });
@@ -520,31 +580,76 @@ document.addEventListener('DOMContentLoaded', () => {
     return { added, updated };
   };
 
+  const fetchGooglePages = async (url, params, token) => {
+    const items = [];
+    let pageToken = '';
+    do {
+      const query = new URLSearchParams(params);
+      query.set('maxResults', '250');
+      if (pageToken) query.set('pageToken', pageToken);
+      const response = await fetch(`${url}?${query}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Google Calendar request failed');
+      const data = await response.json();
+      items.push(...(data.items || []));
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+    return items;
+  };
+
   const pullGoogleEvents = async (token) => {
+    const calendarItems = await fetchGooglePages(
+      'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+      {},
+      token
+    );
+    googleCalendars = calendarItems
+      .filter((calendar) => !calendar.deleted)
+      .map((calendar) => ({
+        id: calendar.id,
+        summary: calendar.summary || calendar.id,
+        backgroundColor: calendar.backgroundColor || '',
+        foregroundColor: calendar.foregroundColor || '',
+        selected: calendar.selected !== false
+      }));
+    googleCalendars.forEach((calendar) => {
+      if (!Object.prototype.hasOwnProperty.call(calendarVisibility, calendar.id)) {
+        calendarVisibility[calendar.id] = calendar.selected;
+      }
+    });
+    localStorage.setItem(GOOGLE_CALENDARS_KEY, JSON.stringify(googleCalendars));
+    saveCalendarVisibility();
+    renderGoogleCalendars();
+
     const from = new Date(selectedDate);
     from.setMonth(from.getMonth() - 1);
     const to = new Date(selectedDate);
     to.setMonth(to.getMonth() + 2);
-    const items = [];
-    let pageToken = '';
-    do {
-      const params = new URLSearchParams({
+    const params = {
         timeMin: from.toISOString(),
         timeMax: to.toISOString(),
         singleEvents: 'true',
         orderBy: 'startTime',
-        maxResults: '250'
-      });
-      if (pageToken) params.set('pageToken', pageToken);
-      const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Google Calendar request failed');
-      const data = await res.json();
-      items.push(...(data.items || []));
-      pageToken = data.nextPageToken || '';
-    } while (pageToken);
-    return mergeGoogleEvents(items);
+        showDeleted: 'true'
+    };
+    const results = await Promise.all(googleCalendars.map(async (calendar) => {
+      try {
+        const items = await fetchGooglePages(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendar.id)}/events`,
+          params,
+          token
+        );
+        return { calendar, result: mergeGoogleEvents(items, calendar) };
+      } catch (error) {
+        return { calendar, error };
+      }
+    }));
+    return results.reduce((total, entry) => ({
+      added: total.added + (entry.result?.added || 0),
+      updated: total.updated + (entry.result?.updated || 0),
+      unavailable: total.unavailable + (entry.error ? 1 : 0)
+    }), { added: 0, updated: 0, unavailable: 0 });
   };
 
   googleSyncBtn.addEventListener('click', () => {
@@ -561,10 +666,11 @@ document.addEventListener('DOMContentLoaded', () => {
             setSyncStatus('Google sign-in was cancelled or denied.');
             return;
           }
-          setSyncStatus('Importing Google Calendar events...');
+          setSyncStatus('Loading your Google Calendars and events...');
           try {
-            const { added, updated } = await pullGoogleEvents(resp.access_token);
-            setSyncStatus(`Synced from Google: ${added} new, ${updated} updated.`);
+            const { added, updated, unavailable } = await pullGoogleEvents(resp.access_token);
+            const unavailableMessage = unavailable ? ` ${unavailable} calendar${unavailable === 1 ? '' : 's'} could not be read.` : '';
+            setSyncStatus(`Synced from Google: ${added} new, ${updated} updated.${unavailableMessage}`);
             renderCalendar();
           } catch (err) {
             setSyncStatus('Could not read Google Calendar. Check Calendar API access and the registered origin.');

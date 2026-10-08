@@ -113,6 +113,11 @@
     </div>
 
     <aside class="calendar-sidebar">
+      <div class="planner-card google-calendars-widget">
+        <h3 class="agenda-date-title">My calendars</h3>
+        <p id="googleCalendarsMessage" class="calendar-list-message"></p>
+        <div id="googleCalendarsList" class="google-calendar-list" aria-label="Google calendars"></div>
+      </div>
       <div class="planner-card day-agenda-widget">
         <h3 id="selectedDateTitle" class="agenda-date-title">Events</h3>
         <form id="addEventForm" class="add-event-form">
@@ -120,12 +125,6 @@
           <div class="event-time-row">
             <label class="inline-time-label">Start <input type="time" id="eventTimeInput" value="09:00" /></label>
             <label class="inline-time-label">End <input type="time" id="eventEndTimeInput" value="10:00" /></label>
-            <div class="pill-container" id="eventCategoryPills">
-              <button type="button" class="pill selected" data-cat="Work">Work</button>
-              <button type="button" class="pill" data-cat="Personal">Personal</button>
-              <button type="button" class="pill" data-cat="Urgent">Urgent</button>
-              <button type="button" class="pill" data-cat="Wellness">Wellness</button>
-            </div>
           </div>
           <button type="submit" id="addEventBtn" class="pill pill-action">+ Add Event</button>
         </form>
