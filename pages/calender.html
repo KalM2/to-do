@@ -95,18 +95,29 @@
           <div>Fri</div>
           <div>Sat</div>
         </div>
+        <div class="calendar-action-row" id="monthActionSlot"></div>
         <div class="calendar-days-grid" id="calendarDaysGrid"></div>
       </div>
 
       <div id="weekView" class="calendar-grid-card timed-cal-card">
         <div class="gcal-scroll" id="weekScroll">
           <div class="gcal-week-header" id="weekHeader"></div>
+          <div class="calendar-action-row gcal-week-action-row" id="weekActionSlot">
+            <button type="button" id="openAddEventBtn" class="calendar-add-event" aria-label="Add new event" title="Add new event">
+              <span aria-hidden="true">+</span><span>Add event</span>
+            </button>
+          </div>
           <div class="gcal-timed-grid" id="weekGrid"></div>
         </div>
       </div>
 
       <div id="dayView" class="calendar-grid-card timed-cal-card hidden">
         <div class="gcal-scroll" id="dayScroll">
+          <div class="gcal-date-header">
+            <div class="gcal-corner"></div>
+            <div class="gcal-date-head-cell" id="dayHeader"></div>
+          </div>
+          <div class="calendar-action-row" id="dayActionSlot"></div>
           <div class="gcal-timed-grid gcal-day-grid" id="dayGrid"></div>
         </div>
       </div>
@@ -116,6 +127,23 @@
         <p id="googleCalendarsMessage" class="calendar-list-message"></p>
         <div id="googleCalendarsList" class="google-calendar-list" aria-label="Google calendars"></div>
       </section>
+
+      <section class="planner-card upcoming-widget">
+        <div class="upcoming-widget-header">
+          <p class="pill-label">Upcoming</p>
+          <div class="upcoming-controls">
+            <div class="upcoming-range-toggle" id="upcomingRangeToggle" role="group" aria-label="Upcoming date range">
+              <button type="button" class="active" data-range="week" aria-pressed="true">Week</button>
+              <button type="button" data-range="month" aria-pressed="false">Month</button>
+            </div>
+            <details class="upcoming-calendar-dropdown">
+              <summary class="pill">Calendars</summary>
+              <div class="upcoming-calendar-options" id="upcomingCalendarFilters"></div>
+            </details>
+          </div>
+        </div>
+        <div class="upcoming-events-list" id="upcomingEventsList"></div>
+      </section>
     </div>
 
     <aside class="calendar-sidebar">
@@ -123,18 +151,8 @@
         <h3 id="selectedDateTitle" class="agenda-date-title">Events for today</h3>
         <div class="day-events-list" id="dayEventsList"></div>
       </div>
-
-      <div class="planner-card upcoming-widget">
-        <p class="pill-label">Upcoming</p>
-        <div class="upcoming-events-list" id="upcomingEventsList"></div>
-      </div>
     </aside>
   </main>
-
-  <button type="button" id="openAddEventBtn" class="floating-add-event" aria-label="Add new event"
-    title="Add new event">
-    <span aria-hidden="true">+</span>
-  </button>
 
   <dialog id="addEventModal" class="app-modal add-event-modal">
     <form method="dialog" id="addEventForm">
@@ -142,6 +160,12 @@
       <div class="form-group">
         <label for="eventTitleInput">Event title</label>
         <input type="text" id="eventTitleInput" placeholder="Event title..." required />
+      </div>
+      <div class="form-group">
+        <label for="eventCalendarSelect">Calendar</label>
+        <select id="eventCalendarSelect" class="app-select">
+          <option value="">Local calendar</option>
+        </select>
       </div>
       <div class="form-group event-time-row">
         <label class="inline-time-label">Start <input type="time" id="eventTimeInput" value="09:00" /></label>
@@ -152,6 +176,20 @@
         <button type="submit" id="addEventBtn" class="btn-primary">Add event</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="eventPreviewModal" class="app-modal event-preview-modal">
+    <div class="event-preview-header">
+      <div>
+        <h3 id="eventPreviewTitle"></h3>
+        <p id="eventPreviewDateTime"></p>
+      </div>
+      <button type="button" id="closeEventPreviewIcon" class="theme-picker-close" aria-label="Close event details">✕</button>
+    </div>
+    <p id="eventPreviewCalendar" class="event-preview-calendar"></p>
+    <div class="modal-actions">
+      <button type="button" id="closeEventPreviewBtn" class="btn-secondary">Close</button>
+    </div>
   </dialog>
 
   <script src="https://accounts.google.com/gsi/client"></script>

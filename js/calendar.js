@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const GOOGLE_CLIENT_ID = '111319810217-66p8c9esisfv5k0lvdcj4j332onllj15.apps.googleusercontent.com';
   const GOOGLE_CALENDARS_KEY = 'simpleDay_google_calendars';
   const GOOGLE_VISIBILITY_KEY = 'simpleDay_google_calendar_visibility';
+  const UPCOMING_VISIBILITY_KEY = 'simpleDay_upcoming_calendar_visibility';
   const deleteSVG = `<svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>`;
   const HOUR_HEIGHT = 56;
   const DAY_START = 0;
@@ -56,12 +57,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let calendarView = 'week';
   let googleCalendars = [];
   let calendarVisibility = {};
+  let upcomingCalendarVisibility = {};
+  let upcomingRange = 'week';
   try {
     googleCalendars = JSON.parse(localStorage.getItem(GOOGLE_CALENDARS_KEY) || '[]');
     calendarVisibility = JSON.parse(localStorage.getItem(GOOGLE_VISIBILITY_KEY) || '{}');
+    upcomingCalendarVisibility = JSON.parse(localStorage.getItem(UPCOMING_VISIBILITY_KEY) || '{}');
   } catch (e) {
     googleCalendars = [];
     calendarVisibility = {};
+    upcomingCalendarVisibility = {};
   }
 
   const currentMonthYearEl = document.getElementById('currentMonthYear');
@@ -74,8 +79,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const eventTitleInput = document.getElementById('eventTitleInput');
   const eventTimeInput = document.getElementById('eventTimeInput');
   const eventEndTimeInput = document.getElementById('eventEndTimeInput');
+  const eventCalendarSelect = document.getElementById('eventCalendarSelect');
+  const addEventBtn = document.getElementById('addEventBtn');
+  const eventPreviewModal = document.getElementById('eventPreviewModal');
+  const eventPreviewTitle = document.getElementById('eventPreviewTitle');
+  const eventPreviewDateTime = document.getElementById('eventPreviewDateTime');
+  const eventPreviewCalendar = document.getElementById('eventPreviewCalendar');
+  const closeEventPreviewBtn = document.getElementById('closeEventPreviewBtn');
+  const closeEventPreviewIcon = document.getElementById('closeEventPreviewIcon');
   const dayEventsList = document.getElementById('dayEventsList');
   const upcomingEventsList = document.getElementById('upcomingEventsList');
+  const upcomingCalendarFilters = document.getElementById('upcomingCalendarFilters');
+  const upcomingRangeToggle = document.getElementById('upcomingRangeToggle');
   const googleCalendarsList = document.getElementById('googleCalendarsList');
   const googleCalendarsMessage = document.getElementById('googleCalendarsMessage');
   const monthView = document.getElementById('monthView');
@@ -84,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const weekHeader = document.getElementById('weekHeader');
   const weekGrid = document.getElementById('weekGrid');
   const dayGrid = document.getElementById('dayGrid');
+  const dayHeader = document.getElementById('dayHeader');
   const syncStatusEl = document.getElementById('calendarSyncStatus');
   const icsImportInput = document.getElementById('icsImportInput');
   const googleSyncBtn = document.getElementById('googleSyncBtn');
@@ -148,12 +164,51 @@ document.addEventListener('DOMContentLoaded', () => {
     return styles.join(';');
   };
 
+  const showEventPreview = (event) => {
+    const date = parseDateKey(event.date);
+    const formatTime = (time) => {
+      const [hour, minute] = (time || '00:00').split(':').map(Number);
+      return new Date(2000, 0, 1, hour, minute).toLocaleTimeString(undefined, {
+        hour: 'numeric', minute: '2-digit'
+      });
+    };
+    eventPreviewTitle.textContent = event.title || '(No title)';
+    eventPreviewDateTime.textContent = `${date.toLocaleDateString(undefined, {
+      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+    })} · ${formatTime(event.time)} - ${formatTime(event.endTime)}`;
+    eventPreviewCalendar.textContent = eventCalendarName(event);
+    eventPreviewModal.showModal();
+  };
+
   const saveCalendarVisibility = () => {
     localStorage.setItem(GOOGLE_VISIBILITY_KEY, JSON.stringify(calendarVisibility));
   };
 
+  const renderEventCalendarOptions = () => {
+    const selectedCalendarId = eventCalendarSelect.value;
+    const localOption = document.createElement('option');
+    localOption.value = '';
+    localOption.textContent = 'Local calendar';
+    eventCalendarSelect.replaceChildren(localOption);
+    googleCalendars.forEach((calendar) => {
+      const option = document.createElement('option');
+      option.value = calendar.id;
+      option.textContent = calendar.canWrite === false
+        ? `${calendar.summary} (read only)`
+        : calendar.summary;
+      option.disabled = calendar.canWrite === false;
+      eventCalendarSelect.appendChild(option);
+    });
+    if ([...eventCalendarSelect.options].some((option) => option.value === selectedCalendarId && !option.disabled)) {
+      eventCalendarSelect.value = selectedCalendarId;
+    } else {
+      eventCalendarSelect.value = '';
+    }
+  };
+
   const renderGoogleCalendars = () => {
     googleCalendarsList.innerHTML = '';
+    renderEventCalendarOptions();
     if (googleCalendars.length === 0) {
       googleCalendarsMessage.textContent = 'Connect Google Calendar to load your calendars.';
       return;
@@ -208,6 +263,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  upcomingRangeToggle.addEventListener('click', (e) => {
+    const button = e.target.closest('button[data-range]');
+    if (!button) return;
+    upcomingRange = button.dataset.range;
+    upcomingRangeToggle.querySelectorAll('button[data-range]').forEach((rangeButton) => {
+      const active = rangeButton === button;
+      rangeButton.classList.toggle('active', active);
+      rangeButton.setAttribute('aria-pressed', String(active));
+    });
+    renderUpcomingEvents();
+  });
+
   const buildHourColumn = () => {
     let html = '<div class="gcal-hours">';
     for (let h = DAY_START; h < DAY_END; h++) {
@@ -227,6 +294,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return `top:${top}px;height:${height}px;`;
   };
 
+  const currentTimeOffset = () => {
+    const now = new Date();
+    return ((now.getHours() * 60 + now.getMinutes()) / 60) * HOUR_HEIGHT;
+  };
+
+  const updateCurrentTimeIndicators = () => {
+    const top = `${currentTimeOffset()}px`;
+    document.querySelectorAll('.gcal-current-time-line').forEach((line) => {
+      line.style.top = top;
+    });
+  };
+
+  window.setInterval(updateCurrentTimeIndicators, 60 * 1000);
+
   const renderTimedColumn = (date, withHours) => {
     const key = toDateKey(date);
     const col = document.createElement('div');
@@ -239,6 +320,14 @@ document.addEventListener('DOMContentLoaded', () => {
       lines += `<div class="gcal-hour-line" style="top:${h * HOUR_HEIGHT}px"></div>`;
     }
     col.innerHTML = lines + (withHours ? '' : '');
+
+    if (key === toDateKey(new Date())) {
+      const currentTimeLine = document.createElement('div');
+      currentTimeLine.className = 'gcal-current-time-line';
+      currentTimeLine.setAttribute('aria-hidden', 'true');
+      currentTimeLine.style.top = `${currentTimeOffset()}px`;
+      col.appendChild(currentTimeLine);
+    }
 
     eventsForDate(key).forEach((ev) => {
       const block = document.createElement('button');
@@ -254,9 +343,70 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         selectedDate = parseDateKey(key);
         renderCalendar();
+        showEventPreview(ev);
       });
+      block.addEventListener('pointerdown', (e) => e.stopPropagation());
       col.appendChild(block);
     });
+
+    let pointerDrag = null;
+    let dragPreview = null;
+    const minutesAtPointer = (clientY, maxMinutes) => {
+      const bounds = col.getBoundingClientRect();
+      const y = Math.max(0, Math.min(bounds.height, clientY - bounds.top));
+      const minutes = Math.round((y / HOUR_HEIGHT) * 60 / 15) * 15;
+      return Math.max(0, Math.min(maxMinutes, minutes));
+    };
+    const updateDragPreview = (endMinutes) => {
+      const start = Math.min(pointerDrag.start, endMinutes);
+      const end = Math.max(pointerDrag.start, endMinutes, start + 15);
+      dragPreview.style.top = `${(start / 60) * HOUR_HEIGHT}px`;
+      dragPreview.style.height = `${((end - start) / 60) * HOUR_HEIGHT}px`;
+    };
+    const clearDragPreview = () => {
+      dragPreview?.remove();
+      dragPreview = null;
+      pointerDrag = null;
+    };
+
+    col.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.pointerType === 'touch' || e.target.closest('.gcal-event')) return;
+      e.preventDefault();
+      const start = minutesAtPointer(e.clientY, DAY_END * 60 - 15);
+      pointerDrag = { pointerId: e.pointerId, start, startY: e.clientY, moved: false };
+      dragPreview = document.createElement('div');
+      dragPreview.className = 'gcal-drag-selection';
+      dragPreview.setAttribute('aria-hidden', 'true');
+      col.appendChild(dragPreview);
+      updateDragPreview(start);
+      col.setPointerCapture(e.pointerId);
+    });
+
+    col.addEventListener('pointermove', (e) => {
+      if (!pointerDrag || e.pointerId !== pointerDrag.pointerId) return;
+      const current = minutesAtPointer(e.clientY, DAY_END * 60);
+      pointerDrag.moved = pointerDrag.moved || Math.abs(e.clientY - pointerDrag.startY) > 6;
+      updateDragPreview(current);
+    });
+
+    col.addEventListener('pointerup', (e) => {
+      if (!pointerDrag || e.pointerId !== pointerDrag.pointerId) return;
+      const didDrag = pointerDrag.moved || Math.abs(e.clientY - pointerDrag.startY) > 6;
+      const endAtPointer = minutesAtPointer(e.clientY, DAY_END * 60);
+      const start = Math.min(pointerDrag.start, endAtPointer);
+      const end = Math.max(pointerDrag.start, endAtPointer, start + 15);
+      clearDragPreview();
+      if (!didDrag) return;
+
+      selectedDate = parseDateKey(key);
+      eventTimeInput.value = timeFromMinutes(start);
+      eventEndTimeInput.value = timeFromMinutes(end);
+      renderCalendar();
+      addEventModal.showModal();
+      eventTitleInput.focus();
+    });
+
+    col.addEventListener('pointercancel', clearDragPreview);
 
     col.addEventListener('click', (e) => {
       const minutes = Math.round((e.offsetY / HOUR_HEIGHT) * 60 / 15) * 15;
@@ -309,6 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderDay = () => {
+    dayHeader.textContent = selectedDate.toLocaleDateString(undefined, {
+      weekday: 'short', month: 'long', day: 'numeric'
+    });
     dayGrid.innerHTML = buildHourColumn();
     const wrap = document.createElement('div');
     wrap.className = 'gcal-days-wrap gcal-single-day';
@@ -367,6 +520,14 @@ document.addEventListener('DOMContentLoaded', () => {
       cell.innerHTML = `<span class="day-num">${j}</span>`;
       calendarDaysGrid.appendChild(cell);
     }
+
+    while (calendarDaysGrid.children.length < 42) {
+      const day = calendarDaysGrid.children.length - firstDayIndex - totalDays + 1;
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day-cell other-month';
+      cell.innerHTML = `<span class="day-num">${day}</span>`;
+      calendarDaysGrid.appendChild(cell);
+    }
   };
 
   const renderSelectedDayEvents = () => {
@@ -400,33 +561,81 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  const renderUpcomingCalendarFilters = () => {
+    upcomingCalendarFilters.innerHTML = '';
+    const calendars = [
+      { id: 'local', summary: 'Local calendar' },
+      ...googleCalendars
+    ];
+    calendars.forEach((calendar) => {
+      const option = document.createElement('label');
+      option.className = 'upcoming-calendar-option';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = upcomingCalendarVisibility[calendar.id] !== false;
+      checkbox.addEventListener('change', () => {
+        upcomingCalendarVisibility[calendar.id] = checkbox.checked;
+        localStorage.setItem(UPCOMING_VISIBILITY_KEY, JSON.stringify(upcomingCalendarVisibility));
+        renderUpcomingEvents();
+      });
+      const name = document.createElement('span');
+      name.textContent = calendar.summary || calendar.id;
+      option.append(checkbox, name);
+      upcomingCalendarFilters.appendChild(option);
+    });
+  };
+
   const renderUpcomingEvents = () => {
-    const todayKey = toDateKey(new Date());
-    const upcoming = events.filter((e) => e.date >= todayKey && isCalendarVisible(e))
-      .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+    renderUpcomingCalendarFilters();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = toDateKey(today);
+    const rangeEnd = upcomingRange === 'week'
+      ? startOfWeek(today)
+      : new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    if (upcomingRange === 'week') rangeEnd.setDate(rangeEnd.getDate() + 6);
+    const rangeEndKey = toDateKey(rangeEnd);
+    const upcoming = events.filter((event) => {
+      const calendarId = event.calendarId || 'local';
+      return event.date >= todayKey && event.date <= rangeEndKey && upcomingCalendarVisibility[calendarId] !== false;
+    }).sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
     upcomingEventsList.innerHTML = '';
     if (upcoming.length === 0) {
       upcomingEventsList.innerHTML = `<p class="empty-state">No upcoming events.</p>`;
       return;
     }
     upcoming.slice(0, 8).forEach((ev) => {
-      const item = document.createElement('div');
+      const item = document.createElement('button');
+      item.type = 'button';
       item.className = 'upcoming-item';
+      const eventDate = parseDateKey(ev.date);
       item.innerHTML = `
-        <div class="upcoming-date-col">
-          <span class="upcoming-date">${ev.date.substring(5)}</span>
-          <span class="upcoming-time">${ev.time || ''}</span>
-        </div>
-        <div class="upcoming-info-col">
+        <span class="upcoming-date-col">
+          <span class="upcoming-date">${eventDate.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+          <span class="upcoming-date-month">${eventDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+          <span class="upcoming-time">${escapeHtml(ev.time || '')}</span>
+        </span>
+        <span class="upcoming-info-col">
           <span class="upcoming-title">${escapeHtml(ev.title)}</span>
           <span class="slot-badge ${eventColorClass(ev)}"${eventColorStyle(ev) ? ` style="${eventColorStyle(ev)}"` : ''}>${escapeHtml(eventCalendarName(ev))}</span>
-        </div>
+        </span>
       `;
+      item.addEventListener('click', () => {
+        selectedDate = eventDate;
+        renderCalendar();
+        showEventPreview(ev);
+      });
       upcomingEventsList.appendChild(item);
     });
   };
 
   const renderCalendar = () => {
+    const addEventSlots = {
+      month: 'monthActionSlot',
+      week: 'weekActionSlot',
+      day: 'dayActionSlot'
+    };
+    document.getElementById(addEventSlots[calendarView]).appendChild(openAddEventBtn);
     monthView.classList.toggle('hidden', calendarView !== 'month');
     weekView.classList.toggle('hidden', calendarView !== 'week');
     dayView.classList.toggle('hidden', calendarView !== 'day');
@@ -448,21 +657,49 @@ document.addEventListener('DOMContentLoaded', () => {
     eventTitleInput.focus();
   });
   closeAddEventBtn.addEventListener('click', () => addEventModal.close());
+  closeEventPreviewBtn.addEventListener('click', () => eventPreviewModal.close());
+  closeEventPreviewIcon.addEventListener('click', () => eventPreviewModal.close());
 
-  addEventForm.addEventListener('submit', (e) => {
+  addEventForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = eventTitleInput.value.trim();
     if (!title) return;
-    events.push({
-      id: 'ev-' + Date.now(),
+    let startMinutes = minutesFromTime(eventTimeInput.value || '09:00');
+    let endMinutes = minutesFromTime(eventEndTimeInput.value || addMinutesToTime(eventTimeInput.value || '09:00', 60));
+    if (endMinutes <= startMinutes) endMinutes = Math.min(23 * 60 + 59, startMinutes + 30);
+    if (endMinutes <= startMinutes) startMinutes = Math.max(0, endMinutes - 30);
+    const event = {
       title,
       date: toDateKey(selectedDate),
-      time: eventTimeInput.value || '09:00',
-      endTime: eventEndTimeInput.value || addMinutesToTime(eventTimeInput.value || '09:00', 60),
+      time: timeFromMinutes(startMinutes),
+      endTime: timeFromMinutes(endMinutes),
       category: 'Local',
       source: 'local'
-    });
-    saveEvents(events);
+    };
+    const calendarId = eventCalendarSelect.value;
+    if (calendarId) {
+      const calendar = googleCalendars.find((item) => item.id === calendarId);
+      if (!calendar) {
+        setSyncStatus('That Google Calendar is no longer available. Sync calendars and try again.');
+        return;
+      }
+      addEventBtn.disabled = true;
+      setSyncStatus(`Requesting permission to add an event to ${calendar.summary}...`);
+      try {
+        const token = await requestGoogleWriteToken();
+        const created = await insertGoogleEvent(calendar, event, token);
+        mergeGoogleEvents([created], calendar);
+        setSyncStatus(`Added event to ${calendar.summary}.`);
+      } catch (error) {
+        setSyncStatus(`Could not add event to ${calendar.summary}. ${error.message}`);
+        return;
+      } finally {
+        addEventBtn.disabled = false;
+      }
+    } else {
+      events.push({ id: 'ev-' + Date.now(), ...event });
+      saveEvents(events);
+    }
     eventTitleInput.value = '';
     addEventModal.close();
     renderCalendar();
@@ -602,6 +839,52 @@ document.addEventListener('DOMContentLoaded', () => {
     return { added, updated };
   };
 
+  const requestGoogleWriteToken = () => new Promise((resolve, reject) => {
+    if (!window.google?.accounts?.oauth2) {
+      reject(new Error('Google sign-in is unavailable.'));
+      return;
+    }
+    try {
+      const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/calendar.events',
+        callback: (response) => {
+          if (response.error || !response.access_token) {
+            reject(new Error('Google Calendar permission was not granted.'));
+            return;
+          }
+          resolve(response.access_token);
+        }
+      });
+      tokenClient.requestAccessToken({ prompt: '' });
+    } catch (error) {
+      reject(error);
+    }
+  });
+
+  const insertGoogleEvent = async (calendar, event, token) => {
+    const start = new Date(`${event.date}T${event.time}:00`);
+    const end = new Date(`${event.date}T${event.endTime}:00`);
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendar.id)}/events`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          summary: event.title,
+          start: { dateTime: start.toISOString() },
+          end: { dateTime: end.toISOString() }
+        })
+      }
+    );
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error?.message || 'Google Calendar could not save the event.');
+    return result;
+  };
+
   const fetchGooglePages = async (url, params, token) => {
     const items = [];
     let pageToken = '';
@@ -633,6 +916,8 @@ document.addEventListener('DOMContentLoaded', () => {
         summary: calendar.summary || calendar.id,
         backgroundColor: calendar.backgroundColor || '',
         foregroundColor: calendar.foregroundColor || '',
+        accessRole: calendar.accessRole || '',
+        canWrite: ['owner', 'writer'].includes(calendar.accessRole),
         selected: calendar.selected !== false
       }));
     googleCalendars.forEach((calendar) => {

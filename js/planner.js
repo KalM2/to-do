@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const escapeAttr = (text) => String(text || '').replace(/"/g, '&quot;');
 
   const currentPlannerDateEl = document.getElementById('currentPlannerDate');
+  const plannerDateHeaderEl = document.getElementById('plannerDateHeader');
   const prevDayBtn = document.getElementById('prevDayBtn');
   const nextDayBtn = document.getElementById('nextDayBtn');
   const todayPlannerBtn = document.getElementById('todayPlannerBtn');
@@ -69,6 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const updateDateDisplay = () => {
     const options = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
     currentPlannerDateEl.textContent = activeDate.toLocaleDateString(undefined, options);
+    plannerDateHeaderEl.textContent = activeDate.toLocaleDateString(undefined, {
+      weekday: 'short', month: 'long', day: 'numeric'
+    });
     loadPriorities();
     loadSchedule();
     loadWater();
@@ -277,7 +281,29 @@ document.addEventListener('DOMContentLoaded', () => {
     grid.appendChild(col);
     scheduleContainerEl.innerHTML = '';
     scheduleContainerEl.appendChild(grid);
+    updatePlannerCurrentTimeLine();
   };
+
+  const updatePlannerCurrentTimeLine = () => {
+    const column = scheduleContainerEl.querySelector('.gcal-day-col');
+    if (!column) return;
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    let line = column.querySelector('.planner-current-time-line');
+    if (getDateKey(activeDate) !== getDateKey(now) || minutes < DAY_START * 60 || minutes >= DAY_END * 60) {
+      line?.remove();
+      return;
+    }
+    if (!line) {
+      line = document.createElement('div');
+      line.className = 'gcal-current-time-line planner-current-time-line';
+      line.setAttribute('aria-hidden', 'true');
+      column.appendChild(line);
+    }
+    line.style.top = `${((minutes - DAY_START * 60) / 60) * HOUR_HEIGHT}px`;
+  };
+
+  window.setInterval(updatePlannerCurrentTimeLine, 60 * 1000);
 
   const openSlotModal = (block) => {
     editingBlockId = block.id;
