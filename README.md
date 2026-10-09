@@ -32,6 +32,7 @@ Click the user avatar in the header to open your **Account & Data Panel**:
   * **Export Backup (JSON)**: Download your entire workspace (tasks, planner notes, calendar events, projects, habits, and profile) as a single backup file.
   * **Import Backup**: Restore a backup `.json` file anytime.
   * **Reset Defaults**: Start fresh whenever needed.
+* **Calendar Connections**: Import ICS files or connect and sync Google Calendar from the profile panel.
 
 ---
 
@@ -55,7 +56,8 @@ Click the user avatar in the header to open your **Account & Data Panel**:
 - **Interactive Monthly Grid**: Clean month view with day numbers, "Today" highlight, and event tags.
 - **Day Inspector**: Click any day to view and manage all scheduled events.
 - **Quick Event Creation**: Add events with time, category badges (*Work*, *Personal*, *Urgent*, *Wellness*), and notes.
-- **Upcoming Agenda**: Chronological overview of upcoming commitments for the current month.
+- **Event Details**: Select events in the day or week grid, or from Upcoming, to preview their details.
+- **Upcoming Agenda**: Filter by week or month and choose which calendars appear in the list.
 
 ### 4. 🗂️ Projects & Workspaces (`pages/projects.html`)
 - **Project Portfolio Cards**: Manage multi-step projects with target due dates, custom color accents, and automatic milestone progress calculation.
@@ -76,3 +78,10 @@ Open `index.html` in any modern web browser or run a lightweight local static se
 python3 -m http.server 8000
 ```
 Then navigate to `http://localhost:8000`.
+
+## GitHub Pages
+The workflow in `.github/workflows/pages.yml` deploys the static site from the `master` branch. The expected site URL is `https://kalm2.github.io/to-do/` after GitHub Pages is enabled with **GitHub Actions** as its source.
+
+To enable Google Calendar on the deployed site, add `https://kalm2.github.io` to the authorized JavaScript origins for the Google OAuth client used by the app.
+
+Tasks, profile settings, planner data, and local calendar events are stored in each browser's local storage. They do not automatically sync between devices; use the profile backup controls to transfer this data. Google Calendar events continue to sync through the connected Google account.

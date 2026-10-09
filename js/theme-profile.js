@@ -253,7 +253,7 @@ const initProfileEngine = () => {
               </div>
               <div class="form-group">
                 <label for="profileInputEmail">Email</label>
-                <input type="text" id="profileInputEmail" />
+                <input type="email" id="profileInputEmail" />
               </div>
               <div class="form-group">
                 <label for="profileInputBio">Daily Motto</label>
@@ -294,6 +294,17 @@ const initProfileEngine = () => {
                 <span class="p-stat-lbl">Active Projects</span>
               </div>
             </div>
+          </div>
+
+          <div class="profile-section calendar-connections-section">
+            <h4 class="profile-section-title">Calendar Connections</h4>
+            <p class="profile-section-description">Import an ICS file or connect a Google Calendar account.</p>
+            <div class="profile-calendar-actions">
+              <button type="button" id="importIcsBtn" class="btn-secondary">Import ICS</button>
+              <input type="file" id="icsImportInput" accept=".ics,text/calendar" hidden />
+              <button type="button" id="googleSyncBtn" class="btn-secondary">Connect Google Calendar</button>
+            </div>
+            <p id="calendarSyncStatus" class="profile-calendar-status" role="status" aria-live="polite"></p>
           </div>
 
           <!-- Data Portability -->
@@ -393,6 +404,26 @@ const initProfileEngine = () => {
 
   if (profileToggleBtn) {
     profileToggleBtn.addEventListener('click', openProfileModal);
+  }
+
+  const isCalendarPage = Boolean(document.getElementById('calendarViewToggle'));
+  const calendarPageLink = document.querySelector('.header-nav a[href*="calender.html"]');
+  const routeToCalendarTools = () => {
+    if (!isCalendarPage && calendarPageLink) {
+      try { sessionStorage.setItem('simpleDay_open_calendar_profile', 'true'); } catch (e) {}
+      window.location.assign(calendarPageLink.href);
+    }
+  };
+  if (!isCalendarPage) {
+    document.getElementById('importIcsBtn')?.addEventListener('click', routeToCalendarTools);
+    document.getElementById('googleSyncBtn')?.addEventListener('click', routeToCalendarTools);
+  } else {
+    try {
+      if (sessionStorage.getItem('simpleDay_open_calendar_profile') === 'true') {
+        sessionStorage.removeItem('simpleDay_open_calendar_profile');
+        openProfileModal();
+      }
+    } catch (e) {}
   }
 
   // Close buttons

@@ -103,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const syncStatusEl = document.getElementById('calendarSyncStatus');
   const icsImportInput = document.getElementById('icsImportInput');
   const googleSyncBtn = document.getElementById('googleSyncBtn');
+  const importIcsBtn = document.getElementById('importIcsBtn');
   const openAddEventBtn = document.getElementById('openAddEventBtn');
   const addEventModal = document.getElementById('addEventModal');
   const closeAddEventBtn = document.getElementById('closeAddEventBtn');
@@ -656,6 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addEventModal.showModal();
     eventTitleInput.focus();
   });
+  importIcsBtn.addEventListener('click', () => icsImportInput.click());
   closeAddEventBtn.addEventListener('click', () => addEventModal.close());
   closeEventPreviewBtn.addEventListener('click', () => eventPreviewModal.close());
   closeEventPreviewIcon.addEventListener('click', () => eventPreviewModal.close());

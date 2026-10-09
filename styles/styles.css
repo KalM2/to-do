@@ -527,13 +527,19 @@ nav ul li a.active::after {
    * ACCOUNT PROFILE MODAL
    * =================================================== */
 .profile-modal {
-  max-width: 580px;
+  width: min(760px, calc(100vw - 32px));
+  max-width: 760px;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+  padding: 24px;
 }
 
 .profile-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-height: 0;
 }
 
 .profile-header-banner {
@@ -585,9 +591,15 @@ nav ul li a.active::after {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-height: 480px;
+  max-height: min(48vh, 480px);
   overflow-y: auto;
   padding-right: 6px;
+  overscroll-behavior: contain;
+}
+
+.profile-section {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .profile-section-title {
@@ -600,8 +612,32 @@ nav ul li a.active::after {
 
 .profile-grid-inputs {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.profile-modal .form-group {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.profile-section-description {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.profile-calendar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-calendar-status {
+  min-height: 1.2em;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .avatar-choices-row {
@@ -3005,6 +3041,20 @@ input[type="checkbox"]:checked::after {
 }
 
 @media (max-width: 600px) {
+  .profile-modal {
+    width: calc(100vw - 24px);
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .profile-body-sections {
+    max-height: 42vh;
+  }
+
+  .profile-header-banner {
+    gap: 12px;
+  }
+
   .view-toggle-group {
     width: 100%;
     box-sizing: border-box;

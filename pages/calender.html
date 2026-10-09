@@ -10,7 +10,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Tangerine:wght@400;700&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/styles.css?v=20261009" />
   <script>
     (function () {
       var t = null;
@@ -72,15 +72,7 @@
         <button type="button" class="btn-toggle active" data-view="week">Week</button>
         <button type="button" class="btn-toggle" data-view="day">Day</button>
       </div>
-      <div class="calendar-sync-actions">
-        <label class="pill pill-action btn-file-label">
-          Import ICS
-          <input type="file" id="icsImportInput" accept=".ics,text/calendar" hidden />
-        </label>
-        <button type="button" id="googleSyncBtn" class="pill">Connect Google Calendar</button>
-      </div>
     </div>
-    <p id="calendarSyncStatus" class="date-subtitle"></p>
   </div>
 
   <main class="calendar-layout google-cal-layout">
@@ -194,8 +186,8 @@
 
   <script src="https://accounts.google.com/gsi/client"></script>
   <script src="../js/db.js"></script>
-  <script src="../js/theme-profile.js"></script>
-  <script src="../js/calendar.js"></script>
+  <script src="../js/theme-profile.js?v=20261009"></script>
+  <script src="../js/calendar.js?v=20261009"></script>
 </body>
 
 </html>
