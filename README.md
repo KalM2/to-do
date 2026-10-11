@@ -104,7 +104,7 @@ The app uses Supabase Auth for email/password accounts and a per-user Postgres w
 1. Create a Supabase project.
 2. Copy the project URL and public anon/publishable key into `js/supabase-config.js`.
 3. Run `database/schema.sql` in the Supabase SQL Editor. Row-level security restricts each workspace to its signed-in owner.
-4. In Supabase Auth settings, add your local app URL (for example `http://localhost:8000`) and deployed site URL to the allowed redirect/site URLs. Choose whether new users must confirm their email.
-5. Serve the app over HTTP, open `pages/login.html`, and create an account. New accounts are sent to the name setup screen; existing accounts go straight to their workspace.
+4. In Supabase Auth settings, add `http://localhost:8000/pages/setup.html` and your deployed `/pages/setup.html` URL to the allowed redirect URLs. Set the site URL and choose whether new users must confirm their email.
+5. Serve the app over HTTP, open `pages/login.html`, and create an account. With email confirmation enabled, the verification link sends the user directly to name setup; with it disabled, signup opens name setup immediately. Existing accounts go straight to their workspace.
 
 Workspace data is stored in Postgres and mirrored in browser storage as a cache for the existing synchronous app features. On first sign-in, existing browser data is imported into the new account; existing IndexedDB journals and focus records are migrated as well. Google Calendar continues to use its connected Google account.

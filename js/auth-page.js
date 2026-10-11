@@ -6,6 +6,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     message.classList.toggle('is-error', isError);
   };
 
+  document.querySelectorAll('.password-visibility-toggle').forEach((toggle) => {
+    const passwordInput = toggle.parentElement.querySelector('input[type="password"], input[type="text"]');
+    toggle.addEventListener('click', () => {
+      const showPassword = passwordInput.type === 'password';
+      passwordInput.type = showPassword ? 'text' : 'password';
+      toggle.textContent = showPassword ? 'Hide' : 'Show';
+      toggle.setAttribute('aria-pressed', String(showPassword));
+      toggle.setAttribute('aria-label', `${showPassword ? 'Hide' : 'Show'} ${passwordInput.id === 'confirmPasswordInput' ? 'confirmation password' : 'password'}`);
+      passwordInput.focus();
+    });
+  });
+
   if (!state.configured) {
     document.querySelectorAll('.auth-form button, .auth-mode').forEach((control) => {
       control.disabled = true;
@@ -68,24 +80,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       if (mode === 'signup') {
         if (password !== confirmInput.value) throw new Error('Those passwords do not match.');
-        const { data, error } = await window.SimpleDayCloud.client.auth.signUp({ email, password });
+        const { data, error } = await window.SimpleDayCloud.client.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: new URL('./setup.html', location.href).href }
+        });
         if (error) throw error;
         if (data.session) {
           location.replace(new URL('./setup.html', location.href).href);
           return;
         }
-        modeButtons[0].click();
-        setMessage('Check your email to confirm your account, then log in here.');
+        setMessage('Your account is created. Confirm your email using the link we sent; it will take you straight to name setup.');
+        submitButton.textContent = 'Confirmation email sent';
+        submitButton.disabled = true;
+        return;
       } else {
         const { error } = await window.SimpleDayCloud.client.auth.signInWithPassword({ email, password });
-        if (error) throw new Error('Email or password is incorrect.');
+        if (error) throw error;
         setMessage('Signed in. Opening your workspace...');
         const { data } = await window.SimpleDayCloud.client.auth.getUser();
         location.replace(new URL(data.user?.user_metadata?.display_name ? '../index.html' : './setup.html', location.href).href);
         return;
       }
     } catch (error) {
-      setMessage(error.message || 'Could not complete that request.', true);
+      const errorCode = error.code || '';
+      const errorText = error.message || '';
+      if (errorCode === 'email_not_confirmed' || /email not confirmed/i.test(errorText)) {
+        setMessage('Please confirm your email using the verification link we sent. It will take you straight to name setup.', true);
+      } else if (errorCode === 'invalid_credentials' || /invalid login credentials/i.test(errorText)) {
+        setMessage('Email or password is incorrect.', true);
+      } else {
+        setMessage(errorText || 'Could not complete that request.', true);
+      }
     }
     submitButton.disabled = false;
   });
