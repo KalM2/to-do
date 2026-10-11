@@ -11,7 +11,7 @@ window.SimpleDayDefaults = {
 
 // Available themes inspired by Omarchy and popular aesthetic palettes
 const siteThemes = [
-  { id: 'warm-cream', name: 'Warm Cream', bg: '#ffe0b5', panel: '#ffffff', accent: '#f6511d', dark: false },
+  { id: 'warm-cream', name: 'Warm Cream', bg: '#f2eee5', panel: '#fffdf8', accent: '#ad4b32', dark: false },
   { id: 'tokyo-night', name: 'Tokyo Night', bg: '#1a1b26', panel: '#202334', accent: '#7aa2f7', dark: true },
   { id: 'catppuccin', name: 'Catppuccin', bg: '#1e1e2e', panel: '#252538', accent: '#f5c2e7', dark: true },
   { id: 'gruvbox', name: 'Gruvbox', bg: '#282828', panel: '#32302f', accent: '#fe8019', dark: true },
@@ -182,7 +182,7 @@ const initProfileEngine = () => {
     email: 'kaleb@simpleday.app',
     bio: 'Focus on what matters most today.',
     avatar: 'K',
-    avatarColor: '#0d2c54'
+    avatarColor: '#344f46'
   };
 
   const getProfile = () => {
@@ -208,7 +208,7 @@ const initProfileEngine = () => {
   const updateHeaderProfile = () => {
     if (headerAvatar) {
       headerAvatar.textContent = profile.avatar || profile.name.charAt(0).toUpperCase() || 'U';
-      headerAvatar.style.backgroundColor = profile.avatarColor || '#0d2c54';
+      headerAvatar.style.backgroundColor = profile.avatarColor || '#344f46';
     }
     if (headerName) {
       headerName.textContent = profile.name || 'Account';
@@ -460,7 +460,7 @@ const initProfileEngine = () => {
         email,
         bio,
         avatar: selectedAvatar || name.charAt(0).toUpperCase(),
-        avatarColor: profile.avatarColor || '#0d2c54'
+        avatarColor: profile.avatarColor || '#344f46'
       };
 
       saveProfile(profile);

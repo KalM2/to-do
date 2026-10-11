@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const form = document.getElementById('authForm');
+  const authTitle = document.getElementById('authTitle');
   const modeButtons = document.querySelectorAll('.auth-mode');
   const confirmField = document.getElementById('confirmPasswordField');
   const confirmInput = document.getElementById('confirmPasswordInput');
@@ -47,6 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         item.classList.toggle('active', active);
         item.setAttribute('aria-pressed', String(active));
       });
+      authTitle.textContent = mode === 'signup' ? 'Create your account' : 'Welcome back';
+      document.title = `${mode === 'signup' ? 'Create account' : 'Log in'} - simple day`;
       confirmField.hidden = mode !== 'signup';
       confirmInput.required = mode === 'signup';
       document.getElementById('authPasswordInput').autocomplete = mode === 'signup' ? 'new-password' : 'current-password';

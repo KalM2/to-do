@@ -4,23 +4,23 @@
 :root,
 :root[data-theme="warm-cream"] {
   color-scheme: light;
-  --bg: #ffe0b5;
-  --panel: #ffffff;
-  --panel-2: #fff8ef;
-  --header-bg: #0d2c54;
-  --header-text: #ffe0b5;
-  --text: #232c33;
-  --muted: #5c6770;
-  --faint: #89939e;
-  --accent: #f6511d;
-  --accent-hover: #d63e0e;
+  --bg: #f2eee5;
+  --panel: #fffdf8;
+  --panel-2: #ebe5da;
+  --header-bg: #2b4039;
+  --header-text: #f5f0e6;
+  --text: #292f2b;
+  --muted: #606b64;
+  --faint: #858d85;
+  --accent: #ad4b32;
+  --accent-hover: #913d29;
   --accent-contrast: #ffffff;
-  --brand-navy: #0d2c54;
-  --brand-navy-hover: #163e72;
+  --brand-navy: #344f46;
+  --brand-navy-hover: #293f38;
   --brand-navy-text: #ffffff;
-  --border: rgba(13, 44, 84, 0.12);
-  --border-strong: rgba(13, 44, 84, 0.25);
-  --shadow: 0 4px 15px rgba(13, 44, 84, 0.05);
+  --border: rgba(43, 64, 57, 0.13);
+  --border-strong: rgba(43, 64, 57, 0.25);
+  --shadow: 0 4px 15px rgba(43, 54, 47, 0.07);
 }
 
 :root[data-theme="matte-black"] {
@@ -462,6 +462,7 @@ nav ul li a.active::after {
 }
 
 .theme-picker-item.active {
+  background: var(--accent);
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent);
 }
@@ -520,7 +521,13 @@ nav ul li a.active::after {
 }
 
 .theme-picker-item.active .theme-indicator {
+  background: var(--accent-contrast);
+  color: var(--accent);
   display: flex;
+}
+
+.theme-picker-item.active .theme-name {
+  color: var(--accent-contrast);
 }
 
 /* * ===================================================
