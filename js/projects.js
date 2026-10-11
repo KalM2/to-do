@@ -1,5 +1,8 @@
 // Projects: click into a project for Kanban + Eisenhower Matrix
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await window.SimpleDayCloud.ready;
+  if (window.SimpleDayCloud.configured && !window.SimpleDayCloud.user) return;
+  await window.SimpleDayDB.ready;
   const deleteSVG = `<svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>`;
 
   const escapeHtml = (text) => {
@@ -110,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const defaultCards = [
       { id: 'c-1', title: 'Audit navigation links & accessibility', column: 'todo', project: 'Simple Day Web Suite', projectId: 'proj-1', priority: 'High', eisenhower: 'ui', focusSeconds: 0 },
       { id: 'c-2', title: 'Polish responsive layout & styling', column: 'in-progress', project: 'Simple Day Web Suite', projectId: 'proj-1', priority: 'Medium', eisenhower: 'i', focusSeconds: 0 },
-      { id: 'c-3', title: 'Verify localStorage persistence edge cases', column: 'review', project: 'Simple Day Web Suite', projectId: 'proj-1', priority: 'High', eisenhower: 'ui', focusSeconds: 0 },
+      { id: 'c-3', title: 'Verify account workspace sync', column: 'review', project: 'Simple Day Web Suite', projectId: 'proj-1', priority: 'High', eisenhower: 'ui', focusSeconds: 0 },
       { id: 'c-4', title: 'Design Fraunces & Tangerine font theme', column: 'done', project: 'Simple Day Web Suite', projectId: 'proj-1', priority: 'Low', eisenhower: 'n', focusSeconds: 0 }
     ];
     localStorage.setItem('simpleDay_kanban_cards', JSON.stringify(defaultCards));

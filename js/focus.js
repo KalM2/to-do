@@ -1,4 +1,7 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await window.SimpleDayCloud.ready;
+  if (window.SimpleDayCloud.configured && !window.SimpleDayCloud.user) return;
+  await window.SimpleDayDB.ready;
   const escapeHtml = (text) => {
     const div = document.createElement('div');
     div.textContent = text == null ? '' : String(text);
@@ -37,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const timerModeBtns = document.querySelectorAll('.timer-mode');
   const sessionCountText = document.getElementById('sessionCountText');
   const focusTotals = document.getElementById('focusTotals');
-  const focusLogList = document.getElementById('focusLogList');
+  const timerProgress = document.getElementById('timerProgress');
 
   let projects = loadProjects();
   let cards = loadCards();
@@ -121,19 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderLogs = async () => {
-    const logs = window.SimpleDayDB ? await SimpleDayDB.getFocusLogs() : [];
-    const todayLogs = logs.filter((l) => l.date === todayKey()).sort((a, b) => b.endedAt - a.endedAt);
-    const byProject = {};
-    logs.forEach((l) => {
-      const key = l.projectTitle || 'Untargeted';
-      byProject[key] = (byProject[key] || 0) + (l.seconds || 0);
-    });
-    focusTotals.innerHTML = Object.keys(byProject).length
-      ? Object.entries(byProject).map(([name, secs]) => `<div class="focus-total-row"><span>${escapeHtml(name)}</span><strong>${escapeHtml(formatDuration(secs))}</strong></div>`).join('')
-      : '<p class="empty-state">No focus time logged yet.</p>';
-    focusLogList.innerHTML = todayLogs.length
-      ? todayLogs.map((l) => `<div class="focus-log-row"><span>${escapeHtml(l.taskTitle || l.projectTitle || 'Session')}</span><strong>${escapeHtml(formatDuration(l.seconds))}</strong></div>`).join('')
-      : '<p class="empty-state">Nothing logged today.</p>';
+    focusTotals.innerHTML = projects.length
+      ? projects.map((project) => {
+        const seconds = cards
+          .filter((card) => card.projectId === project.id || card.project === project.title)
+          .reduce((total, card) => total + (card.focusSeconds || 0), 0);
+        return `<div class="focus-total-row"><span>${escapeHtml(project.title)}</span><strong>${escapeHtml(formatDuration(seconds))}</strong></div>`;
+      }).join('')
+      : '<p class="empty-state">Create a project to start tracking time.</p>';
     sessionCountText.textContent = parseInt(localStorage.getItem(getSessionsKey()), 10) || 0;
   };
 
@@ -166,6 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const updateTimerDisplay = () => {
+    timerDisplayEl.textContent = formatTimer(timerRemaining);
+    const circumference = 2 * Math.PI * 90;
+    const progress = timerDuration ? timerRemaining / timerDuration : 0;
+    timerProgress.style.strokeDasharray = circumference;
+    timerProgress.style.strokeDashoffset = circumference * (1 - progress);
   };
 
   const playChime = () => {
@@ -202,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     timerInterval = setInterval(async () => {
       timerRemaining--;
       if (activeMode === 'focus') sessionElapsed++;
-      timerDisplayEl.textContent = formatTimer(timerRemaining);
+      updateTimerDisplay();
       if (timerRemaining <= 0) {
         clearInterval(timerInterval);
         isTimerRunning = false;
@@ -229,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
       timerDuration = parseInt(btn.dataset.time, 10);
       activeMode = timerDuration === 1500 ? 'focus' : 'break';
       timerRemaining = timerDuration;
-      timerDisplayEl.textContent = formatTimer(timerRemaining);
+      updateTimerDisplay();
     });
   });
 
@@ -241,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
   timerResetBtn.addEventListener('click', async () => {
     await pauseTimer();
     timerRemaining = timerDuration;
-    timerDisplayEl.textContent = formatTimer(timerRemaining);
+    updateTimerDisplay();
   });
 
   projectSelect.addEventListener('change', () => {
@@ -277,6 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
   populateProjects();
   populateTasks();
   updateTargetSummary();
-  timerDisplayEl.textContent = formatTimer(timerRemaining);
+  updateTimerDisplay();
   renderLogs();
 });

@@ -531,9 +531,10 @@ const initProfileEngine = () => {
     const keysToRemove = [];
     for (let index = 0; index < localStorage.length; index++) {
       const key = localStorage.key(index);
-      if (key && !key.startsWith('simpleDay_defaults_initialized_')) keysToRemove.push(key);
+      if (key && (key.startsWith('simpleDay_') || key.startsWith('simpleTracker_')) && !key.startsWith('simpleDay_defaults_initialized_')) keysToRemove.push(key);
     }
     keysToRemove.forEach((key) => localStorage.removeItem(key));
+    if (window.SimpleDayCloud?.configured) await SimpleDayCloud.saveWorkspace();
   };
 
   const btnClearData = document.getElementById('btnClearData');
@@ -557,7 +558,13 @@ const initProfileEngine = () => {
       if (confirm('Replace all saved data with the starter defaults? This cannot be undone.')) {
         try {
           if (window.SimpleDayDB) await window.SimpleDayDB.clearAll();
-          localStorage.clear();
+          const keysToRemove = [];
+          for (let index = 0; index < localStorage.length; index++) {
+            const key = localStorage.key(index);
+            if (key && (key.startsWith('simpleDay_') || key.startsWith('simpleTracker_'))) keysToRemove.push(key);
+          }
+          keysToRemove.forEach((key) => localStorage.removeItem(key));
+          if (window.SimpleDayCloud?.configured) await SimpleDayCloud.saveWorkspace();
           alert('Defaults restored. Reloading...');
           window.location.reload();
         } catch (error) {
@@ -596,7 +603,10 @@ const initMobileNav = () => {
   });
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await window.SimpleDayCloud.ready;
+  if (window.SimpleDayCloud.configured && !window.SimpleDayCloud.user) return;
+  await window.SimpleDayDB.ready;
   initThemeEngine();
   initProfileEngine();
   initMobileNav();

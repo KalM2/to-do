@@ -1,4 +1,7 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await window.SimpleDayCloud.ready;
+  if (window.SimpleDayCloud.configured && !window.SimpleDayCloud.user) return;
+  await window.SimpleDayDB.ready;
   let activeDate = new Date();
   let selectedSlotTag = 'Focus';
   let editingBlockId = null;
@@ -146,6 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       const cb = div.querySelector('.priority-cb');
       const input = div.querySelector('.priority-input');
+      const projectPickerBtn = div.querySelector('.pick-task-btn');
+      projectPickerBtn.hidden = Boolean(input.value.trim());
       cb.addEventListener('change', () => {
         div.classList.toggle('completed', cb.checked);
         savePriorities();
@@ -153,9 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
       input.addEventListener('input', () => {
         div.dataset.taskId = '';
         div.dataset.projectId = '';
+        projectPickerBtn.hidden = Boolean(input.value.trim());
         savePriorities();
       });
-      div.querySelector('.pick-task-btn').addEventListener('click', () => {
+      projectPickerBtn.addEventListener('click', () => {
         pickingPriorityIndex = index;
         openTaskPicker();
       });
@@ -191,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
               row.querySelector('.priority-input').value = card.title;
               row.dataset.projectId = proj.id;
               row.dataset.taskId = card.id;
+              row.querySelector('.pick-task-btn').hidden = true;
               savePriorities();
             }
             taskPickerModal.close();
@@ -406,14 +413,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!html) html = localStorage.getItem(getStorageKey('notes')) || '';
     dailyNotesEl.innerHTML = html;
     if (dailyNotesModal) dailyNotesModal.innerHTML = html;
-    setNotesStatus('Saved locally');
+    setNotesStatus('Saved');
   };
 
   const persistNotes = async (html) => {
     const key = getDateKey(activeDate);
     localStorage.setItem(getStorageKey('notes'), html);
     if (window.SimpleDayDB) await SimpleDayDB.saveJournal(key, html);
-    setNotesStatus('Saved locally');
+    setNotesStatus('Saved');
   };
 
   const bindEditor = (editor) => {

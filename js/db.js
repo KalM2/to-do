@@ -1,88 +1,99 @@
-// Local IndexedDB for journals and focus logs (no server required)
 (() => {
-  const DB_NAME = 'simpleDay';
-  const DB_VERSION = 1;
-  let dbPromise = null;
-
-  const openDb = () => {
-    if (dbPromise) return dbPromise;
-    dbPromise = new Promise((resolve, reject) => {
-      if (!window.indexedDB) {
-        reject(new Error('IndexedDB unavailable'));
-        return;
-      }
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains('journals')) {
-          db.createObjectStore('journals', { keyPath: 'date' });
-        }
-        if (!db.objectStoreNames.contains('focusLogs')) {
-          db.createObjectStore('focusLogs', { keyPath: 'id' });
-        }
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    return dbPromise;
-  };
-
-  const lsGet = (key, fallback) => {
+  const readJson = (key, fallback) => {
     try {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
-    } catch (e) {
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) : fallback;
+    } catch (error) {
       return fallback;
     }
   };
 
-  const lsSet = (key, value) => {
-    localStorage.setItem(key, JSON.stringify(value));
+  const writeJson = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+
+  const migrateLegacyDatabase = async () => {
+    if (localStorage.getItem('simpleDayLegacyDbMigrated') === 'true' || !window.indexedDB) return false;
+    let createdDuringOpen = false;
+    const db = await new Promise((resolve) => {
+      const request = indexedDB.open('simpleDay');
+      request.onupgradeneeded = () => {
+        createdDuringOpen = true;
+        request.transaction.abort();
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+    });
+    if (!db || createdDuringOpen) {
+      localStorage.setItem('simpleDayLegacyDbMigrated', 'true');
+      return false;
+    }
+
+    const stores = ['journals', 'focusLogs'].filter((name) => db.objectStoreNames.contains(name));
+    if (!stores.length) {
+      db.close();
+      localStorage.setItem('simpleDayLegacyDbMigrated', 'true');
+      return false;
+    }
+
+    const records = await new Promise((resolve, reject) => {
+      const transaction = db.transaction(stores, 'readonly');
+      const reads = stores.map((name) => new Promise((readResolve, readReject) => {
+        const request = transaction.objectStore(name).getAll();
+        request.onsuccess = () => readResolve([name, request.result || []]);
+        request.onerror = () => readReject(request.error);
+      }));
+      Promise.all(reads).then((entries) => resolve(Object.fromEntries(entries)), reject);
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+
+    if (records.journals?.length) {
+      const journals = readJson('simpleDay_journals', {});
+      records.journals.forEach((record) => {
+        if (record.date && !journals[record.date]) {
+          journals[record.date] = { html: record.html || '', updatedAt: record.updatedAt || Date.now() };
+        }
+      });
+      writeJson('simpleDay_journals', journals);
+    }
+    if (records.focusLogs?.length) {
+      const logs = readJson('simpleDay_focus_logs', []);
+      const knownIds = new Set(logs.map((record) => record.id));
+      records.focusLogs.forEach((record) => {
+        if (!knownIds.has(record.id)) logs.push(record);
+      });
+      writeJson('simpleDay_focus_logs', logs);
+    }
+    localStorage.setItem('simpleDayLegacyDbMigrated', 'true');
+    return Boolean(records.journals?.length || records.focusLogs?.length);
   };
 
+  const ready = window.SimpleDayCloud.ready.then(async (state) => {
+    if (state.configured && !window.SimpleDayCloud.user) return false;
+    return migrateLegacyDatabase();
+  }).catch((error) => {
+    console.warn('Could not migrate the previous local database', error);
+    return false;
+  });
+
   window.SimpleDayDB = {
+    ready,
+
     async clearAll() {
-      if (!window.indexedDB) return;
-      const db = await openDb();
-      await new Promise((resolve, reject) => {
-        const transaction = db.transaction(['journals', 'focusLogs'], 'readwrite');
-        transaction.objectStore('journals').clear();
-        transaction.objectStore('focusLogs').clear();
-        transaction.oncomplete = resolve;
-        transaction.onerror = () => reject(transaction.error);
-        transaction.onabort = () => reject(transaction.error || new Error('Failed to clear stored data'));
-      });
+      localStorage.removeItem('simpleDay_journals');
+      localStorage.removeItem('simpleDay_focus_logs');
     },
 
     async getJournal(date) {
-      try {
-        const db = await openDb();
-        return await new Promise((resolve, reject) => {
-          const req = db.transaction('journals', 'readonly').objectStore('journals').get(date);
-          req.onsuccess = () => resolve(req.result || null);
-          req.onerror = () => reject(req.error);
-        });
-      } catch (e) {
-        const all = lsGet('simpleDay_journals', {});
-        return all[date] ? { date, ...all[date] } : null;
-      }
+      const journals = readJson('simpleDay_journals', {});
+      return journals[date] ? { date, ...journals[date] } : null;
     },
 
     async saveJournal(date, html) {
-      const record = { date, html, updatedAt: Date.now() };
-      try {
-        const db = await openDb();
-        await new Promise((resolve, reject) => {
-          const req = db.transaction('journals', 'readwrite').objectStore('journals').put(record);
-          req.onsuccess = () => resolve();
-          req.onerror = () => reject(req.error);
-        });
-      } catch (e) {
-        const all = lsGet('simpleDay_journals', {});
-        all[date] = { html, updatedAt: record.updatedAt };
-        lsSet('simpleDay_journals', all);
-      }
-      return record;
+      const record = { html, updatedAt: Date.now() };
+      const journals = readJson('simpleDay_journals', {});
+      journals[date] = record;
+      writeJson('simpleDay_journals', journals);
+      return { date, ...record };
     },
 
     async addFocusLog(entry) {
@@ -98,32 +109,14 @@
         endedAt: entry.endedAt || Date.now()
       };
       if (record.seconds < 1) return record;
-      try {
-        const db = await openDb();
-        await new Promise((resolve, reject) => {
-          const req = db.transaction('focusLogs', 'readwrite').objectStore('focusLogs').put(record);
-          req.onsuccess = () => resolve();
-          req.onerror = () => reject(req.error);
-        });
-      } catch (e) {
-        const logs = lsGet('simpleDay_focus_logs', []);
-        logs.push(record);
-        lsSet('simpleDay_focus_logs', logs);
-      }
+      const logs = readJson('simpleDay_focus_logs', []);
+      logs.push(record);
+      writeJson('simpleDay_focus_logs', logs);
       return record;
     },
 
     async getFocusLogs() {
-      try {
-        const db = await openDb();
-        return await new Promise((resolve, reject) => {
-          const req = db.transaction('focusLogs', 'readonly').objectStore('focusLogs').getAll();
-          req.onsuccess = () => resolve(req.result || []);
-          req.onerror = () => reject(req.error);
-        });
-      } catch (e) {
-        return lsGet('simpleDay_focus_logs', []);
-      }
+      return readJson('simpleDay_focus_logs', []);
     }
   };
 })();

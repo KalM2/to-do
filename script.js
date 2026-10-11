@@ -1,4 +1,7 @@
-(() => {
+(async () => {
+await window.SimpleDayCloud.ready;
+if (window.SimpleDayCloud.configured && !window.SimpleDayCloud.user) return;
+await window.SimpleDayDB.ready;
 // * DOM ELEMENTS
 const btnTime = document.getElementById('btnTime');
 const btnPriority = document.getElementById('btnPriority');

@@ -10,7 +10,7 @@
    <link
       href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Tangerine:wght@400;700&display=swap"
       rel="stylesheet" />
-   <link rel="stylesheet" href="./styles/styles.css?v=20261009" />
+   <link rel="stylesheet" href="./styles/styles.css?v=20261010" />
    <script>
       (function () {
          var t = null;
@@ -18,6 +18,9 @@
          document.documentElement.dataset.theme = t || "warm-cream";
       })();
    </script>
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+   <script src="./js/supabase-config.js" defer></script>
+   <script src="./js/cloud-auth.js" defer></script>
 </head>
 
 <body>
@@ -33,7 +36,7 @@
             <ul>
                <li><a href="./index.html" class="active">Home</a></li>
                <li><a href="./pages/planner.html">Planner</a></li>
-               <li><a href="./pages/calender.html">Calender</a></li>
+               <li><a href="./pages/calender.html">Calendar</a></li>
                <li><a href="./pages/projects.html">Projects</a></li>
                <li><a href="./pages/focus.html">Focus</a></li>
                <li><a href="./pages/habits.html">Habits</a></li>
@@ -67,7 +70,7 @@
    <div class="dashboard-controls">
       <div id="TimeFormatChoice">
          <button type="button" id="btnTime" class="btn-toggle">time of day format</button>
-         <button type"button" id="btnPriority" class="btn-toggle active">priority format</button>
+         <button type="button" id="btnPriority" class="btn-toggle active">priority format</button>
       </div>
       <div id="statsRow" class="stats-row">
          <div class="stats-indicator">
@@ -147,9 +150,9 @@
       </div>
    </main>
 
-   <script src="./js/db.js"></script>
-   <script src="./js/theme-profile.js?v=20261009"></script>
-   <script src="script.js"></script>
+   <script src="./js/db.js" defer></script>
+   <script src="./js/theme-profile.js?v=20261009" defer></script>
+   <script src="script.js" defer></script>
 </body>
 
 </html>

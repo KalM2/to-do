@@ -1,5 +1,8 @@
 // Google-style calendar with month/week/day views, ICS import, and optional Google sync
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await window.SimpleDayCloud.ready;
+  if (window.SimpleDayCloud.configured && !window.SimpleDayCloud.user) return;
+  await window.SimpleDayDB.ready;
   const GOOGLE_CLIENT_ID = '111319810217-66p8c9esisfv5k0lvdcj4j332onllj15.apps.googleusercontent.com';
   const GOOGLE_CALENDARS_KEY = 'simpleDay_google_calendars';
   const GOOGLE_VISIBILITY_KEY = 'simpleDay_google_calendar_visibility';

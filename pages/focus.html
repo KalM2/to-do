@@ -10,14 +10,17 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Tangerine:wght@400;700&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="../styles/styles.css?v=20261009" />
+  <link rel="stylesheet" href="../styles/styles.css?v=20261010" />
   <script>
-    (function() {
+    (function () {
       var t = null;
-      try { t = localStorage.getItem("simpleDay_theme"); } catch(e) {}
+      try { t = localStorage.getItem("simpleDay_theme"); } catch (e) { }
       document.documentElement.dataset.theme = t || "warm-cream";
     })();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="../js/supabase-config.js" defer></script>
+  <script src="../js/cloud-auth.js" defer></script>
 </head>
 
 <body>
@@ -42,10 +45,11 @@
       <div class="header-actions">
         <button type="button" class="header-btn theme-toggle" aria-label="Choose color theme">
           <svg class="palette-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1 .9-1.8 2-1.8H17a4 4 0 0 0 4-4c0-4.4-4-7.7-9-7.7Z"/>
-            <circle cx="7.5" cy="11" r="1.3" fill="var(--bg)"/>
-            <circle cx="10.5" cy="7" r="1.3" fill="var(--bg)"/>
-            <circle cx="15" cy="7.5" r="1.3" fill="var(--bg)"/>
+            <path
+              d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1 .9-1.8 2-1.8H17a4 4 0 0 0 4-4c0-4.4-4-7.7-9-7.7Z" />
+            <circle cx="7.5" cy="11" r="1.3" fill="var(--bg)" />
+            <circle cx="10.5" cy="7" r="1.3" fill="var(--bg)" />
+            <circle cx="15" cy="7.5" r="1.3" fill="var(--bg)" />
           </svg>
           <span class="theme-toggle-label">Warm Cream</span>
         </button>
@@ -59,7 +63,7 @@
 
   <div id="greetings">
     <h1>Focus Timer</h1>
-    <p class="date-subtitle">Tie a session to a project and task. Time is saved on this laptop.</p>
+    <p class="date-subtitle">Choose a project and let focused time add up there.</p>
   </div>
 
   <main class="focus-layout">
@@ -83,7 +87,13 @@
         <button type="button" class="pill timer-mode" data-time="300">Short Break</button>
         <button type="button" class="pill timer-mode" data-time="900">Long Break</button>
       </div>
-      <div class="timer-display" id="timerDisplay">25:00</div>
+      <div class="focus-clock" role="timer" aria-label="Time remaining">
+        <svg class="focus-clock-ring" viewBox="0 0 220 220" aria-hidden="true">
+          <circle class="focus-clock-track" cx="110" cy="110" r="90"></circle>
+          <circle class="focus-clock-progress" id="timerProgress" cx="110" cy="110" r="90"></circle>
+        </svg>
+        <div class="timer-display" id="timerDisplay" aria-live="off">25:00</div>
+      </div>
       <div class="timer-controls">
         <button type="button" id="timerStartBtn" class="pill pill-action">Start</button>
         <button type="button" id="timerResetBtn" class="pill">Reset</button>
@@ -95,15 +105,14 @@
     </section>
 
     <section class="planner-card focus-log-card">
-      <p class="pill-label">Time tracked</p>
+      <p class="pill-label">Project time</p>
       <div class="focus-totals" id="focusTotals"></div>
-      <div class="focus-log-list" id="focusLogList"></div>
     </section>
   </main>
 
-  <script src="../js/theme-profile.js?v=20261009"></script>
-  <script src="../js/db.js"></script>
-  <script src="../js/focus.js"></script>
+  <script src="../js/theme-profile.js?v=20261009" defer></script>
+  <script src="../js/db.js" defer></script>
+  <script src="../js/focus.js" defer></script>
 </body>
 
 </html>

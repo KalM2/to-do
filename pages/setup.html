@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Set up your profile - simple day</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../styles/styles.css?v=20261010" />
+    <link rel="stylesheet" href="../styles/auth.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/cloud-auth.js"></script>
+    <script src="../js/auth-page.js" defer></script>
+</head>
+
+<body class="auth-page">
+    <main class="auth-shell">
+        <a href="../index.html" class="brand-link auth-brand"><span class="brand-symbol">✦</span><span
+                class="brand-title">simple day</span></a>
+        <section class="auth-panel" aria-labelledby="setupTitle">
+            <p class="auth-kicker">One last thing</p>
+            <h1 id="setupTitle">What should we call you?</h1>
+            <form id="setupForm" class="auth-form">
+                <label class="form-group" for="displayNameInput">Your name
+                    <input type="text" id="displayNameInput" autocomplete="name" minlength="2" maxlength="60"
+                        required />
+                </label>
+                <button type="submit" class="btn-primary">Continue</button>
+            </form>
+            <p id="authMessage" class="auth-message" role="status" aria-live="polite"></p>
+        </section>
+    </main>
+</body>
+
+</html>
