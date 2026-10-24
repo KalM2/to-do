@@ -11,7 +11,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Tangerine:wght@400;700&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="../styles/styles.css?v=20261011" />
+  <link rel="stylesheet" href="../styles/styles.css?v=20261012" />
   <script>
     (function () {
       var t = null;
@@ -62,119 +62,93 @@
     </div>
   </header>
 
+  <!-- Greetings header to match other tabs -->
   <div id="greetings">
     <h1>Calendar</h1>
-    <div class="calendar-toolbar">
-      <div class="calendar-month-nav">
-        <button type="button" id="prevRangeBtn" class="nav-arrow-btn" title="Previous">‹</button>
-        <span id="currentMonthYear" class="month-nav-title"></span>
-        <button type="button" id="nextRangeBtn" class="nav-arrow-btn" title="Next">›</button>
-        <button type="button" id="todayMonthBtn" class="pill">Today</button>
-      </div>
-      <div class="view-toggle-group" id="calendarViewToggle">
-        <button type="button" class="btn-toggle" data-view="month">Month</button>
-        <button type="button" class="btn-toggle active" data-view="week">Week</button>
-        <button type="button" class="btn-toggle" data-view="day">Day</button>
-      </div>
-    </div>
+    <p class="date-subtitle" id="calCurrentDateSubtitle"></p>
   </div>
 
-  <main class="calendar-layout google-cal-layout">
-    <div class="calendar-main-pane">
-      <div id="monthView" class="calendar-grid-card hidden">
-        <div class="calendar-weekdays-header">
-          <div>Sun</div>
-          <div>Mon</div>
-          <div>Tue</div>
-          <div>Wed</div>
-          <div>Thu</div>
-          <div>Fri</div>
-          <div>Sat</div>
-        </div>
-        <div class="calendar-action-row" id="monthActionSlot"></div>
-        <div class="calendar-days-grid" id="calendarDaysGrid"></div>
+  <!-- Hidden marker kept for theme-profile.js isCalendarPage detection -->
+  <div id="calendarViewToggle" hidden aria-hidden="true"></div>
+  <input type="file" id="icsImportInput" accept=".ics" hidden aria-hidden="true" />
+  <span id="calendarSyncStatus" hidden aria-hidden="true"></span>
+
+  <main class="cal-modern-container">
+    <!-- Minimalist modern control bar -->
+    <div class="cal-control-bar">
+      <div class="cal-control-info">
+        <span class="cal-overview-badge">✦ Agenda</span>
+        <span class="cal-overview-count" id="totalEventsCount">0 events</span>
       </div>
-
-      <div id="weekView" class="calendar-grid-card timed-cal-card">
-        <div class="gcal-scroll" id="weekScroll">
-          <div class="gcal-week-header" id="weekHeader"></div>
-          <div class="calendar-action-row gcal-week-action-row" id="weekActionSlot">
-            <button type="button" id="openAddEventBtn" class="calendar-add-event" aria-label="Add new event"
-              title="Add new event">
-              <span aria-hidden="true">+</span><span>Add event</span>
-            </button>
-          </div>
-          <div class="gcal-timed-grid" id="weekGrid"></div>
-        </div>
+      <div class="cal-control-actions">
+        <button type="button" id="openSettingsBtn" class="pill cal-control-pill" title="Manage Calendar sources and sync">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.44.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+          </svg>
+          Manage Calendars
+        </button>
       </div>
-
-      <div id="dayView" class="calendar-grid-card timed-cal-card hidden">
-        <div class="gcal-scroll" id="dayScroll">
-          <div class="gcal-date-header">
-            <div class="gcal-corner"></div>
-            <div class="gcal-date-head-cell" id="dayHeader"></div>
-          </div>
-          <div class="calendar-action-row" id="dayActionSlot"></div>
-          <div class="gcal-timed-grid gcal-day-grid" id="dayGrid"></div>
-        </div>
-      </div>
-
-      <section class="planner-card google-calendars-widget">
-        <h2 class="agenda-date-title">My Calendars</h2>
-        <p id="googleCalendarsMessage" class="calendar-list-message"></p>
-        <div id="googleCalendarsList" class="google-calendar-list" aria-label="Google calendars"></div>
-      </section>
-
-      <section class="planner-card upcoming-widget">
-        <div class="upcoming-widget-header">
-          <p class="pill-label">Upcoming</p>
-          <div class="upcoming-controls">
-            <div class="upcoming-range-toggle" id="upcomingRangeToggle" role="group" aria-label="Upcoming date range">
-              <button type="button" class="active" data-range="week" aria-pressed="true">Week</button>
-              <button type="button" data-range="month" aria-pressed="false">Month</button>
-            </div>
-            <details class="upcoming-calendar-dropdown">
-              <summary class="pill">Calendars</summary>
-              <div class="upcoming-calendar-options" id="upcomingCalendarFilters"></div>
-            </details>
-          </div>
-        </div>
-        <div class="upcoming-events-list" id="upcomingEventsList"></div>
-      </section>
     </div>
 
-    <aside class="calendar-sidebar">
-      <div class="planner-card day-agenda-widget">
-        <h3 id="selectedDateTitle" class="agenda-date-title">Events for today</h3>
-        <div class="day-events-list" id="dayEventsList"></div>
-      </div>
-    </aside>
+    <!-- Event feed container (Today, Upcoming, Past) -->
+    <div class="cal-event-feed" id="calEventFeed"></div>
   </main>
 
-  <dialog id="addEventModal" class="app-modal add-event-modal">
-    <form method="dialog" id="addEventForm">
-      <h3>Add new event</h3>
-      <div class="form-group">
-        <label for="eventTitleInput">Event title</label>
-        <input type="text" id="eventTitleInput" placeholder="Event title..." required />
+  <!-- Calendar Sources & Sync Modal -->
+  <dialog id="calendarSettingsModal" class="app-modal calendar-settings-modal">
+    <div class="cal-modal-header">
+      <div>
+        <h3>Manage Calendars</h3>
+        <p class="cal-modal-subtitle">Connect external calendars or import .ics files</p>
       </div>
-      <div class="form-group">
-        <label for="eventCalendarSelect">Calendar</label>
-        <select id="eventCalendarSelect" class="app-select">
-          <option value="">Local calendar</option>
-        </select>
+      <button type="button" id="closeSettingsIcon" class="theme-picker-close" aria-label="Close dialog">✕</button>
+    </div>
+
+    <div class="cal-modal-body">
+      <div class="cal-sync-options">
+        <button type="button" id="googleSyncBtn" class="cal-source-card">
+          <div class="cal-source-icon google-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M21.35 11.1H12v2.8h5.37C16.8 16.35 14.58 18 12 18a6 6 0 110-12c1.7 0 3.23.72 4.34 1.87l2.12-2.12A9.93 9.93 0 0012 3C6.48 3 2 7.48 2 13s4.48 10 10 10c5.52 0 10-4.48 10-10 0-.68-.07-1.33-.2-1.9h-.45z"/>
+            </svg>
+          </div>
+          <div class="cal-source-info">
+            <span class="cal-source-title">Google Calendar</span>
+            <span class="cal-source-desc">Sync your Google account events directly</span>
+          </div>
+          <span class="pill cal-source-btn">Connect</span>
+        </button>
+
+        <button type="button" id="importIcsBtn" class="cal-source-card">
+          <div class="cal-source-icon ics-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 3a1 1 0 011 1v4h4a1 1 0 010 2h-4v4a1 1 0 01-2 0v-4H7a1 1 0 010-2h4V7a1 1 0 011-1z"/>
+            </svg>
+          </div>
+          <div class="cal-source-info">
+            <span class="cal-source-title">Import iCalendar (.ics)</span>
+            <span class="cal-source-desc">Upload exported calendar files</span>
+          </div>
+          <span class="pill cal-source-btn">Upload</span>
+        </button>
       </div>
-      <div class="form-group event-time-row">
-        <label class="inline-time-label">Start <input type="time" id="eventTimeInput" value="09:00" /></label>
-        <label class="inline-time-label">End <input type="time" id="eventEndTimeInput" value="10:00" /></label>
+
+      <div class="cal-connected-section" id="calCalendarsBar" hidden>
+        <span class="cal-section-subtitle">Connected Calendars</span>
+        <div class="cal-calendar-chips" id="googleCalendarsList"></div>
+        <p id="googleCalendarsMessage" class="cal-calendars-msg" hidden></p>
       </div>
-      <div class="modal-actions">
-        <button type="button" id="closeAddEventBtn" class="btn-secondary">Cancel</button>
-        <button type="submit" id="addEventBtn" class="btn-primary">Add event</button>
-      </div>
-    </form>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="closeSettingsBtn" class="btn-primary">Done</button>
+    </div>
   </dialog>
 
+  <!-- Modern Floating Toast Notification -->
+  <div id="calSyncFeedback" class="cal-toast" role="status" aria-live="polite"></div>
+
+  <!-- Event preview dialog -->
   <dialog id="eventPreviewModal" class="app-modal event-preview-modal">
     <div class="event-preview-header">
       <div>
@@ -193,7 +167,7 @@
   <script src="https://accounts.google.com/gsi/client" defer></script>
   <script src="../js/db.js" defer></script>
   <script src="../js/theme-profile.js?v=20261009" defer></script>
-  <script src="../js/calendar.js?v=20261009" defer></script>
+  <script src="../js/calendar.js?v=20261012" defer></script>
 </body>
 
 </html>

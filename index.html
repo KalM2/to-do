@@ -11,7 +11,7 @@
    <link
       href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Tangerine:wght@400;700&display=swap"
       rel="stylesheet" />
-   <link rel="stylesheet" href="./styles/styles.css?v=20261011" />
+   <link rel="stylesheet" href="./styles/styles.css?v=20261024" />
    <script>
       (function () {
          var t = null;
@@ -68,88 +68,74 @@
       <p id="currentDateDisplay" class="date-subtitle"></p>
    </div>
 
-   <div class="dashboard-controls">
-      <div id="TimeFormatChoice">
-         <button type="button" id="btnTime" class="btn-toggle">time of day format</button>
-         <button type="button" id="btnPriority" class="btn-toggle active">priority format</button>
-      </div>
-      <div id="statsRow" class="stats-row">
-         <div class="stats-indicator">
-            <span id="statsCount">0 of 0 completed</span>
-            <div class="stats-bar-track">
-               <div id="statsBarFill" class="stats-bar-fill"></div>
+   <main class="tasks-page-container">
+      <!-- Top Google Tasks-style quick bar & stats -->
+      <div class="tasks-top-bar">
+         <div id="statsRow" class="stats-row">
+            <div class="stats-indicator">
+               <span id="statsCount">0 of 0 completed</span>
+               <div class="stats-bar-track">
+                  <div id="statsBarFill" class="stats-bar-fill"></div>
+               </div>
             </div>
-         </div>
-         <button type="button" id="clearCompletedBtn" class="btn-clear" title="Clear all completed tasks">Clear
-            Completed</button>
-      </div>
-   </div>
-
-   <main>
-      <div id="formatContainer">
-         <!-- ? TIME VIEW -->
-         <div id="timeGroup" class="hidden">
-            <div class="section-wrapper">
-               <h2>Morning</h2>
-               <div id="morning-list" class="task-list"></div>
-            </div>
-            <div class="section-wrapper">
-               <h2>Afternoon</h2>
-               <div id="afternoon-list" class="task-list"></div>
-            </div>
-            <div class="section-wrapper">
-               <h2>Evening</h2>
-               <div id="evening-list" class="task-list"></div>
+            <div class="top-bar-actions">
+               <button type="button" id="clearCompletedBtn" class="btn-clear" title="Clear all completed tasks">Clear Completed</button>
+               <button type="button" id="addSectionBtn" class="pill pill-action add-section-btn">+ Add Section</button>
             </div>
          </div>
 
-         <!-- ? PRIORITY VIEW -->
-         <div id="priorityGroup">
-            <div class="section-wrapper">
-               <h2>Urgent & Important</h2>
-               <div id="urgent-important-list" class="task-list"></div>
+         <!-- Google Tasks style quick task creation input bar -->
+         <div class="google-tasks-input-card">
+            <div class="task-input-icon" aria-hidden="true">
+               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+               </svg>
             </div>
-            <div class="section-wrapper">
-               <h2>Important</h2>
-               <div id="important-list" class="task-list"></div>
+            <input type="text" id="AddTasksInput" placeholder="Add a task..." autofocus />
+            <div class="task-input-controls">
+               <select id="taskSectionSelect" class="section-select-pill" title="Choose section" aria-label="Target section">
+                  <!-- dynamically populated with sections -->
+               </select>
+               <button type="button" id="AddTaskBtn" class="pill">Add</button>
             </div>
-            <div class="section-wrapper">
-               <h2>Urgent</h2>
-               <div id="urgent-list" class="task-list"></div>
-            </div>
-         </div>
-
-         <!-- ! REMAINING TASKS -->
-         <div class="section-wrapper" id="remainingWrapper">
-            <h2>Remaining Tasks</h2>
-            <div id="remainingTaskList" class="task-list"></div>
          </div>
       </div>
 
-      <div class="vertical-divider"></div>
-
-      <div id="NewTask">
-         <label for="AddTasksInput">Add a new task</label>
-         <input type="text" id="AddTasksInput" placeholder="Type and hit Enter..." autofocus />
-
-         <p class="pill-label">Time Format</p>
-         <div class="pill-container" id="timePills">
-            <button type="button" class="pill" data-value="morning-list">Morning</button>
-            <button type="button" class="pill" data-value="afternoon-list">Afternoon</button>
-            <button type="button" class="pill" data-value="evening-list">Evening</button>
-            <button type="button" class="pill" data-value="advanced">Advanced</button>
-         </div>
-
-         <p class="pill-label">Priority</p>
-         <div class="pill-container" id="priorityPills">
-            <button type="button" class="pill" data-value="urgent-important-list">Urgent/Imp</button>
-            <button type="button" class="pill" data-value="important-list">Important</button>
-            <button type="button" class="pill" data-value="urgent-list">Urgent</button>
-         </div>
-
-         <button type="button" id="AddTaskBtn">add task</button>
+      <!-- Container where custom user sections are rendered -->
+      <div id="sectionsContainer" class="sections-container">
+         <!-- Dynamically generated sections -->
       </div>
    </main>
+
+   <!-- New Section Modal -->
+   <dialog id="newSectionModal" class="app-modal">
+      <form method="dialog" id="newSectionForm">
+         <h3>New Section</h3>
+         <div class="form-group">
+            <label for="newSectionNameInput">Section Name</label>
+            <input type="text" id="newSectionNameInput" placeholder="e.g. Work, Personal, Groceries..." required />
+         </div>
+         <div class="modal-actions">
+            <button type="button" id="cancelSectionBtn" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary">Create Section</button>
+         </div>
+      </form>
+   </dialog>
+
+   <!-- Rename Section Modal -->
+   <dialog id="renameSectionModal" class="app-modal">
+      <form method="dialog" id="renameSectionForm">
+         <h3>Rename Section</h3>
+         <div class="form-group">
+            <label for="renameSectionNameInput">Section Name</label>
+            <input type="text" id="renameSectionNameInput" required />
+         </div>
+         <div class="modal-actions">
+            <button type="button" id="cancelRenameSectionBtn" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary">Save</button>
+         </div>
+      </form>
+   </dialog>
 
    <script src="./js/db.js" defer></script>
    <script src="./js/theme-profile.js?v=20261009" defer></script>
