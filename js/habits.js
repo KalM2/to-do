@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // State
   let activeWeekDate = new Date(); // Any date in the target week
   let selectedHabitCategory = 'Mind';
+  let draggedHabitId = null;
 
   // DOM Elements
   const currentWeekRangeEl = document.getElementById('currentWeekRange');
@@ -206,6 +207,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const catClass = `tag-${habit.category.toLowerCase()}`;
       const tr = document.createElement('tr');
       tr.className = 'habit-row';
+      tr.draggable = true;
+      tr.dataset.habitId = habit.id;
 
       let rowHtml = `
         <td class="td-habit">
@@ -261,6 +264,62 @@ document.addEventListener('DOMContentLoaded', async () => {
           saveHabits(habits);
           renderHabits();
         }
+      });
+
+      // Drag & drop handlers for reordering
+      tr.addEventListener('dragstart', (e) => {
+        if (e.target.closest('button')) {
+          e.preventDefault();
+          return;
+        }
+        draggedHabitId = habit.id;
+        tr.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', habit.id);
+      });
+
+      tr.addEventListener('dragend', () => {
+        tr.classList.remove('dragging');
+        document.querySelectorAll('.habit-row').forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
+        draggedHabitId = null;
+      });
+
+      tr.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!draggedHabitId || draggedHabitId === habit.id) return;
+        const rect = tr.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const isTop = e.clientY < midY;
+        tr.classList.toggle('drag-over-top', isTop);
+        tr.classList.toggle('drag-over-bottom', !isTop);
+      });
+
+      tr.addEventListener('dragleave', () => {
+        tr.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+
+      tr.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        tr.classList.remove('drag-over-top', 'drag-over-bottom');
+        if (!draggedHabitId || draggedHabitId === habit.id) return;
+
+        const draggedIndex = habits.findIndex(h => h.id === draggedHabitId);
+        const targetIndex = habits.findIndex(h => h.id === habit.id);
+        if (draggedIndex === -1 || targetIndex === -1) return;
+
+        const [movedHabit] = habits.splice(draggedIndex, 1);
+        const rect = tr.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const insertBefore = e.clientY < midY;
+
+        let newIdx = habits.findIndex(h => h.id === habit.id);
+        if (!insertBefore) newIdx++;
+        habits.splice(newIdx, 0, movedHabit);
+
+        saveHabits(habits);
+        renderHabits();
       });
 
       habitsTableBody.appendChild(tr);

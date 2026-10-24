@@ -2521,7 +2521,29 @@ input[type="checkbox"]:not(.google-cb):not(.subtask-cb):checked::after {
 
 .habit-row {
   border-bottom: 1px solid var(--border);
-  transition: background 0.2s;
+  transition: background 0.15s, opacity 0.15s;
+  cursor: grab;
+}
+
+.habit-row:active {
+  cursor: grabbing;
+}
+
+.habit-row.dragging {
+  opacity: 0.35;
+  background: var(--panel-2);
+}
+
+.habit-row.drag-over-top {
+  border-top: 2px solid var(--accent) !important;
+}
+
+.habit-row.drag-over-bottom {
+  border-bottom: 2px solid var(--accent) !important;
+}
+
+.habit-row button {
+  cursor: pointer;
 }
 
 .habit-row:hover {
