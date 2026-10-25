@@ -1573,6 +1573,11 @@ input[type="checkbox"]:not(.google-cb):not(.subtask-cb):checked::after {
 .tag-personal, .tag-wellness, .tag-health { background: rgba(115, 218, 202, 0.15); color: #73daca; }
 .tag-break, .tag-fitness { background: rgba(158, 206, 106, 0.15); color: #9ece6a; }
 .tag-productivity { background: rgba(255, 158, 100, 0.15); color: #ff9e64; }
+.tag-morning { background: rgba(72, 187, 120, 0.18); color: #2f855a; }
+.tag-afternoon { background: rgba(246, 224, 94, 0.22); color: #975a16; }
+.tag-evening { background: rgba(237, 137, 54, 0.18); color: #c05621; }
+.tag-night { background: rgba(159, 122, 234, 0.18); color: #9f7aea; }
+.tag-anytime { background: rgba(245, 101, 101, 0.18); color: #c53030; }
 
 .prio-high { background: rgba(246, 81, 29, 0.18); color: var(--accent); }
 .prio-medium { background: rgba(122, 162, 247, 0.18); color: var(--accent); }
@@ -2466,8 +2471,18 @@ input[type="checkbox"]:not(.google-cb):not(.subtask-cb):checked::after {
 
 .habits-header-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+}
+
+.habits-header-actions,
+.habits-sort-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .habits-header-row h2 {
@@ -2499,7 +2514,7 @@ input[type="checkbox"]:not(.google-cb):not(.subtask-cb):checked::after {
 }
 
 .th-habit, .td-habit { text-align: left !important; min-width: 220px; }
-.th-cat, .td-cat { min-width: 110px; }
+.th-cat, .td-cat, .th-time, .td-time { min-width: 110px; }
 .th-streak, .td-streak { min-width: 90px; }
 .th-day, .td-check { width: 55px; }
 

@@ -11,7 +11,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Tangerine:wght@400;700&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="../styles/styles.css?v=20261011" />
+  <link rel="stylesheet" href="../styles/styles.css?v=20261025" />
   <script>
     (function () {
       var t = null;
@@ -98,7 +98,13 @@
     <div class="planner-card habits-table-card">
       <div class="habits-header-row">
         <h2>Weekly Check-ins</h2>
-        <button type="button" id="openAddHabitBtn" class="pill pill-action">+ New Habit</button>
+        <div class="habits-header-actions">
+          <div class="habits-sort-controls" role="group" aria-label="Sort habits">
+            <button type="button" id="sortHabitsByTimeBtn" class="pill">Time of day</button>
+            <button type="button" id="sortHabitsCustomBtn" class="pill">Custom order</button>
+          </div>
+          <button type="button" id="openAddHabitBtn" class="pill pill-action">+ New Habit</button>
+        </div>
       </div>
 
       <div class="habits-table-responsive">
@@ -106,7 +112,7 @@
           <thead>
             <tr id="habitsDaysHeaderRow">
               <th class="th-habit">Habit</th>
-              <th class="th-cat">Category</th>
+              <th class="th-time">Time</th>
               <th class="th-streak">Streak</th>
               <th class="th-day">Mon</th>
               <th class="th-day">Tue</th>
@@ -126,21 +132,21 @@
     </div>
   </main>
 
-  <!-- Add Habit Modal -->
+  <!-- Add/Edit Habit Modal -->
   <dialog id="newHabitModal" class="app-modal">
     <form method="dialog" id="newHabitForm">
-      <h3>Create New Habit</h3>
+      <h3 id="habitModalTitle">Create New Habit</h3>
       <div class="form-group">
         <label for="habitNameInput">Habit Name</label>
         <input type="text" id="habitNameInput" placeholder="e.g. Morning 20m Meditation" required />
       </div>
       <div class="form-group">
-        <label>Category</label>
-        <div class="pill-container" id="habitCategoryPills">
-          <button type="button" class="pill selected" data-cat="Mind">Mind</button>
-          <button type="button" class="pill" data-cat="Health">Health</button>
-          <button type="button" class="pill" data-cat="Fitness">Fitness</button>
-          <button type="button" class="pill" data-cat="Productivity">Productivity</button>
+        <label>Time of Day</label>
+        <div class="pill-container" id="habitTimePills">
+          <button type="button" class="pill selected" data-time="Morning">Morning</button>
+          <button type="button" class="pill" data-time="Afternoon">Afternoon</button>
+          <button type="button" class="pill" data-time="Evening">Evening</button>
+          <button type="button" class="pill" data-time="Anytime">Anytime</button>
         </div>
       </div>
       <div class="form-group">
@@ -153,7 +159,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" id="closeHabitModalBtn" class="btn-secondary">Cancel</button>
-        <button type="submit" class="btn-primary">Add Habit</button>
+        <button type="submit" id="saveHabitBtn" class="btn-primary">Add Habit</button>
       </div>
     </form>
   </dialog>
