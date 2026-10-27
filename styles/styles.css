@@ -4,23 +4,23 @@
 :root,
 :root[data-theme="warm-cream"] {
   color-scheme: light;
-  --bg: #f2eee5;
-  --panel: #fffdf8;
-  --panel-2: #ebe5da;
-  --header-bg: #2b4039;
-  --header-text: #f5f0e6;
-  --text: #292f2b;
-  --muted: #606b64;
-  --faint: #858d85;
-  --accent: #ad4b32;
-  --accent-hover: #913d29;
+  --bg: #fff5ca;
+  --panel: #fffdf5;
+  --panel-2: #c9efdf;
+  --header-bg: #24211f;
+  --header-text: #fffdf5;
+  --text: #24211f;
+  --muted: #554d45;
+  --faint: #766d63;
+  --accent: #ff5b3d;
+  --accent-hover: #e8482d;
   --accent-contrast: #ffffff;
-  --brand-navy: #344f46;
-  --brand-navy-hover: #293f38;
+  --brand-navy: #275efe;
+  --brand-navy-hover: #164ce0;
   --brand-navy-text: #ffffff;
-  --border: rgba(43, 64, 57, 0.13);
-  --border-strong: rgba(43, 64, 57, 0.25);
-  --shadow: 0 4px 15px rgba(43, 54, 47, 0.07);
+  --border: #24211f;
+  --border-strong: #24211f;
+  --shadow: 5px 5px 0 #24211f;
 }
 
 :root[data-theme="matte-black"] {
@@ -3975,5 +3975,384 @@ input[type="checkbox"]:not(.google-cb):not(.subtask-cb):checked::after {
   .section-select-pill {
     max-width: 100%;
     flex: 1;
+  }
+}
+
+/* Neo-brutalist visual system */
+:root {
+  --neo-ink: var(--text);
+  --neo-shadow: 5px 5px 0 var(--neo-ink);
+}
+
+body {
+  font-family: "Arial", "Helvetica Neue", sans-serif;
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+header.app-header {
+  border-bottom: 3px solid var(--neo-ink);
+  box-shadow: 0 4px 0 var(--neo-ink);
+}
+
+.header-inner {
+  max-width: 1440px;
+  min-height: 72px;
+  padding: 14px 28px;
+}
+
+.brand-link {
+  font-size: 1.3rem;
+  letter-spacing: -0.04em;
+}
+
+.brand-symbol {
+  color: #ffcf38;
+}
+
+nav.header-nav ul {
+  gap: 8px;
+}
+
+nav.header-nav ul li a {
+  border: 2px solid transparent;
+  border-radius: 0;
+  padding: 7px 10px;
+  font-weight: 700;
+  opacity: 1;
+}
+
+nav.header-nav ul li a:hover,
+nav.header-nav ul li a.active {
+  color: var(--header-bg);
+  background: #ffcf38;
+  border-color: var(--neo-ink);
+}
+
+nav ul li a.active::after {
+  display: none;
+}
+
+.header-btn {
+  border: 2px solid var(--header-text);
+  border-radius: 0;
+  padding: 7px 12px;
+  font-weight: 700;
+}
+
+.header-btn:hover,
+.header-btn.active {
+  color: var(--header-bg);
+  background: #ffcf38;
+  border-color: var(--header-text);
+}
+
+.profile-avatar-badge {
+  border: 2px solid var(--neo-ink);
+  border-radius: 0;
+  background: #ffcf38;
+  color: var(--neo-ink);
+}
+
+#greetings {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 36px 28px 20px;
+  text-align: left;
+}
+
+#greetings h1,
+.section-wrapper h2 {
+  color: var(--text);
+  font-family: "Arial", "Helvetica Neue", sans-serif;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1.05;
+  text-shadow: none;
+}
+
+.date-subtitle {
+  margin-top: 8px;
+  text-align: left;
+  font-style: normal;
+  letter-spacing: 0;
+}
+
+main {
+  max-width: 1440px;
+}
+
+.tasks-top-bar,
+.task-section-card,
+.planner-card,
+.section-wrapper,
+.project-card,
+.kanban-column,
+.habit-card,
+.metric-card,
+.focus-select-card,
+.focus-timer-card,
+.timer-widget,
+.cal-control-bar,
+.cal-day-group,
+.cal-event-card,
+.day-agenda-widget,
+.upcoming-widget,
+.google-calendars-widget,
+.journal-widget,
+.profile-stat-box,
+.theme-picker-item,
+.auth-panel {
+  border: 2px solid var(--neo-ink);
+  border-radius: 0;
+  box-shadow: var(--neo-shadow);
+}
+
+.tasks-top-bar {
+  padding: 22px;
+}
+
+.task-section-card,
+.planner-card,
+.section-wrapper,
+.project-card,
+.kanban-column,
+.habit-card,
+.metric-card,
+.focus-select-card,
+.focus-timer-card,
+.timer-widget {
+  padding: 22px;
+}
+
+.section-header-row {
+  border-bottom: 2px solid var(--neo-ink);
+}
+
+.section-title,
+.project-card h3,
+.planner-card h2,
+.planner-card h3 {
+  color: var(--text);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.google-tasks-input-card,
+.section-select-pill,
+.task-section-card input,
+.app-modal,
+.profile-modal,
+.theme-picker,
+.theme-picker-item,
+.journal-editor,
+.task-picker-item,
+.cal-source-card,
+.cal-calendar-chip {
+  border: 2px solid var(--neo-ink);
+  border-radius: 0;
+  box-shadow: var(--neo-shadow);
+}
+
+.google-tasks-input-card {
+  background: var(--panel);
+  padding: 10px 16px;
+}
+
+.google-tasks-input-card:focus-within,
+.section-select-pill:focus,
+.app-modal input:focus,
+.app-modal select:focus,
+.app-modal textarea:focus,
+.planner-textarea:focus {
+  border-color: var(--brand-navy);
+  box-shadow: 3px 3px 0 var(--brand-navy);
+}
+
+.pill,
+.btn-toggle,
+.btn-primary,
+.btn-secondary,
+.btn-clear,
+.header-btn,
+.nav-arrow-btn,
+.action-btn,
+.section-action-btn,
+.btn-add-card,
+.cal-control-pill,
+.cal-source-btn {
+  border: 2px solid var(--neo-ink);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 var(--neo-ink);
+  font-family: inherit;
+  font-weight: 800;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.pill:hover,
+.btn-toggle:hover,
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-clear:hover,
+.header-btn:hover,
+.nav-arrow-btn:hover,
+.action-btn:hover,
+.section-action-btn:hover,
+.btn-add-card:hover,
+.cal-control-pill:hover,
+.cal-source-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--neo-ink);
+}
+
+.pill:active,
+.btn-toggle:active,
+.btn-primary:active,
+.btn-secondary:active,
+.btn-clear:active,
+.header-btn:active,
+.nav-arrow-btn:active,
+.action-btn:active,
+.section-action-btn:active,
+.btn-add-card:active,
+.cal-control-pill:active,
+.cal-source-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--neo-ink);
+}
+
+.pill-action,
+.btn-primary,
+.btn-toggle.active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--neo-ink);
+}
+
+.pill-action:hover,
+.btn-primary:hover,
+.btn-toggle.active:hover {
+  background: var(--accent-hover);
+  color: var(--accent-contrast);
+}
+
+.task-container {
+  border-bottom: 1px dashed var(--border-strong);
+  border-radius: 0;
+}
+
+.task-container:hover,
+.task-picker-item:hover {
+  background: var(--panel-2);
+}
+
+.google-cb,
+.subtask-cb,
+input[type="checkbox"]:not(.google-cb):not(.subtask-cb) {
+  border-color: var(--neo-ink);
+  border-radius: 0 !important;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="search"],
+select,
+textarea,
+.app-select,
+.planner-textarea {
+  border: 2px solid var(--neo-ink);
+  border-radius: 0;
+}
+
+.stats-bar-track,
+.stats-bar-fill,
+.section-count-badge,
+.profile-badge-tier {
+  border-radius: 0;
+}
+
+.stats-bar-track {
+  border: 2px solid var(--neo-ink);
+}
+
+.app-modal,
+.profile-modal {
+  padding: 28px;
+}
+
+.app-modal::backdrop {
+  background: rgb(36 33 31 / 65%);
+  backdrop-filter: none;
+}
+
+.gcal-event,
+.cal-event-card {
+  border: 2px solid var(--neo-ink);
+  border-radius: 0;
+}
+
+.cal-event-card {
+  box-shadow: 3px 3px 0 var(--neo-ink);
+}
+
+.cal-event-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--neo-ink);
+}
+
+.cal-day-group--today {
+  border-color: var(--accent);
+  box-shadow: 5px 5px 0 var(--accent);
+}
+
+.focus-clock-ring {
+  filter: drop-shadow(4px 4px 0 var(--neo-ink));
+}
+
+.auth-panel {
+  border: 2px solid var(--neo-ink);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 var(--neo-ink);
+}
+
+@media (max-width: 900px) {
+  .header-inner {
+    padding: 12px 18px;
+  }
+
+  #greetings {
+    padding: 28px 20px 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tasks-top-bar,
+  .task-section-card,
+  .planner-card,
+  .section-wrapper,
+  .project-card,
+  .kanban-column,
+  .habit-card,
+  .metric-card,
+  .focus-select-card,
+  .focus-timer-card,
+  .timer-widget {
+    padding: 16px;
+  }
+
+  .app-modal,
+  .profile-modal {
+    padding: 20px;
   }
 }

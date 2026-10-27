@@ -195,6 +195,74 @@
   font-size: 0.88rem;
 }
 
+.auth-brand,
+.auth-brand .brand-title {
+  color: var(--text);
+  font-family: "Arial", "Helvetica Neue", sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+}
+
+.auth-panel {
+  border: 2px solid var(--text);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 var(--text);
+}
+
+.auth-panel h1 {
+  font-family: "Arial", "Helvetica Neue", sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.auth-mode-switch {
+  border: 2px solid var(--text);
+  border-radius: 0;
+}
+
+.auth-mode,
+.auth-mode.active {
+  border-radius: 0;
+}
+
+.auth-mode.active {
+  border: 2px solid var(--text);
+  box-shadow: 3px 3px 0 var(--text);
+}
+
+.auth-form input {
+  border: 2px solid var(--text);
+  border-radius: 0;
+}
+
+.auth-form input:focus-visible,
+.auth-mode:focus-visible {
+  outline: 3px solid var(--brand-navy);
+}
+
+.auth-form [type="submit"] {
+  border: 2px solid var(--text);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 var(--text);
+  font-family: inherit;
+  font-weight: 800;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.auth-form [type="submit"]:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--text);
+}
+
+.auth-form [type="submit"]:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--text);
+}
+
+.password-visibility-toggle {
+  border-radius: 0;
+}
+
 @media (max-width: 960px) {
   .auth-page {
     padding: 28px 18px;
